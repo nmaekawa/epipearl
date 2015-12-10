@@ -39,11 +39,11 @@ test_requirements = [
 setup(
     name='epipearl',
     version='0.1.0',
-    description="python client for epiphan-pearl device api",
+    description="python client for epiphan-pearl http api",
     long_description=readme + '\n\n' + history,
     author="nmaekawa",
     author_email='nmaekawa@g.harvard.edu',
-    url='https://github.com/nmaekawa/epipearl',
+    url='https://github.com/harvard-dce/epipearl',
     packages=find_packages(exclude=[ "docs", "tests*" ]),
     package_dir={'epipearl':
                  'epipearl'},
