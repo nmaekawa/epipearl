@@ -27,16 +27,18 @@ class EpipearlError( Exception ):
     pass
 
 
-def handle_http_exceptions( callbacks={} ):
-    def wrapper( f ):
-        def newfunc( *args, **kwargs ):
+def handle_http_exceptions(callbacks=None):
+    if callbacks is None:
+        callbacks = {}
+    def wrapper(f):
+        def newfunc(*args, **kwargs):
             try:
-                return f( *args, **kwargs )
+                return f(*args, **kwargs)
             except requests.HTTPError, e:
                 resp = e.response
                 req = e.request
                 if resp.status_code in callbacks.keys():
-                    callbacks[ resp.status_code ]( e )
+                    callbacks[resp.status_code](e)
                 else:
                     raise
             except Exception, e:
@@ -76,9 +78,9 @@ def default_useragent():
                     '%s/%s' % (p_system, p_release)])
 
 
-class Epipearl( object ):
+class Epipearl(object):
 
-    def __init__( self, base_url, user, passwd, timeout=None ):
+    def __init__(self, base_url, user, passwd, timeout=None):
         self.url = base_url
         self.user = user
         self.passwd = passwd
@@ -90,46 +92,56 @@ class Epipearl( object ):
                 'X-REQUESTED-AUTH': 'Basic' }
 
 
-    def get( self, path, params={}, extra_headers={} ):
+    def get(self, path, params=None, extra_headers=None):
+        if params is None:
+            params = {}
+        if extra_headers is None:
+            extra_headers = {}
         headers = self.default_headers.copy()
-        headers.update( extra_headers )
+        headers.update(extra_headers)
 
-        url = urljoin( self.url, path )
-        auth = HTTPBasicAuth( self.user, self.passwd )
-        resp = requests.get( url,
+        url = urljoin(self.url, path)
+        auth = HTTPBasicAuth(self.user, self.passwd)
+        resp = requests.get(url,
                 params=params,
                 auth=auth,
                 headers=headers,
-                timeout=self.timeout )
+                timeout=self.timeout)
 
         resp.raise_for_status()
         return resp
 
-    def post( self, path, data={}, extra_headers={} ):
+    def post(self, path, data=None, extra_headers=None):
+        if data is None:
+            data = {}
+        if extra_headers is None:
+            extra_headers = {}
         headers = self.default_headers.copy()
-        headers.update( extra_headers )
+        headers.update(extra_headers)
 
-        url = urljoin( self.url, path )
-        auth = HTTPBasicAuth( self.user, self.passwd )
-        resp = requests.post( url,
+        url = urljoin(self.url, path)
+        auth = HTTPBasicAuth(self.user, self.passwd)
+        resp = requests.post(url,
                 data=data,
                 auth=auth,
                 headers=headers,
-                timeout=self.timeout )
+                timeout=self.timeout)
 
         resp.raise_for_status()
         return resp
 
-    def put( self, path, data={}, extra_headers={} ):
+    def put(self, path, data={}, extra_headers={}):
         raise NotImplementedError()
 
-    def delete( self, path, params={}, extra_headers={} ):
+    def delete(self, path, params={}, extra_headers={}):
         raise NotImplementedError()
 
 
     @handle_http_exceptions()
-    def get_params( self, channel, params={} ):
-        response = Admin.get_params( self, channel, params );
+    def get_params(self, channel, params=None):
+        if params is None:
+            params = {}
+        response = Admin.get_params(self, channel, params);
         r = {}
         for line in response.text.splitlines():
             (key, value) = [ x.strip() for x in line.split('=')]
@@ -138,8 +150,8 @@ class Epipearl( object ):
 
 
     @handle_http_exceptions()
-    def set_params( self, channel, params ):
-        response = Admin.set_params( self, channel, params );
-        return 2 == ( response/100 )
+    def set_params(self, channel, params):
+        response = Admin.set_params(self, channel, params);
+        return 2 == (response/100)
 
 
