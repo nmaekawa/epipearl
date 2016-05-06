@@ -16,15 +16,13 @@ import requests
 from requests.auth import HTTPBasicAuth
 from urlparse import urljoin
 
-from endpoints import *
-
-__all__ = ['Epipearl', 'EpipearlError']
+from errors import RequestsError
+from errors import SettingConfigError
+from endpoints.admin import Admin
+from endpoints.admin import AdminWebUi
 
 _default_timeout = 5
 
-
-class EpipearlError( Exception ):
-    pass
 
 
 def handle_http_exceptions(callbacks=None):
@@ -34,7 +32,7 @@ def handle_http_exceptions(callbacks=None):
         def newfunc(*args, **kwargs):
             try:
                 return f(*args, **kwargs)
-            except requests.HTTPError, e:
+            except requests.HTTPError as e:
                 resp = e.response
                 req = e.request
                 if resp.status_code in callbacks.keys():
@@ -143,8 +141,8 @@ class Epipearl(object):
             params = {}
         response = Admin.get_params(self, channel, params);
         r = {}
-        for line in response.text.splitlines():
-            (key, value) = [ x.strip() for x in line.split('=')]
+        for line in response['response_text'].splitlines():
+            (key, value) = [x.strip() for x in line.split('=')]
             r[key] = value
         return r
 
@@ -152,6 +150,72 @@ class Epipearl(object):
     @handle_http_exceptions()
     def set_params(self, channel, params):
         response = Admin.set_params(self, channel, params);
-        return 2 == (response/100)
+        return 2 == (response['status_code']/100)
+
+
+    #
+    # calls done to the web ui
+    # some functionality is not available via http api;
+    # methods below send forms (or gets) to the web ui.
+    # these are mostly configuration calls.
+    #
+
+    @handle_http_exceptions()
+    def set_ntp(self, server, timezone):
+        """set ntp server and timezone in epiphan."""
+
+        def check_tz(tag):
+            return tag.name == 'option' and \
+                    tag.has_attr('selected') and \
+                    tag.has_attr('value') and \
+                    tag['value'] == timezone
+
+        def check_ntp_proto(tag):
+            return tag.name == 'option' and \
+                    tag.has_attr('selected') and \
+                    tag.has_attr('value') and \
+                    tag['value'] == 'NTP'
+
+        def check_ntp_sync(tag):
+            return tag.has_attr('id') and \
+                    tag['id'] == 'rdate_auto' and \
+                    tag.has_attr('checked') and \
+                    tag.has_attr('value') and \
+                    tag['value'] == 'auto'
+
+        def check_ntp_server(tag):
+            return tag.has_attr('id') and \
+                    tag['id'] == 'server' and \
+                    tag.has_attr('value') and \
+                    tag['value'] == server
+
+        params = {'server': server, 'tz': timezone,
+                'fn': 'date', 'rdate': 'auto', 'rdate_proto': 'NTP'}
+
+        check_success = [
+                {'emsg': 'timezone setting expected(%s)' % timezone,
+                    'func': check_tz},
+                {'emsg': 'protocol setting expecetd(NTP)',
+                    'func': check_ntp_proto},
+                {'emsg': 'expected to enable sync(auto)',
+                    'func': check_ntp_sync},
+                {'emsg': 'expected ntp server(%s)' % server,
+                    'func': check_ntp_server}]
+        try:
+            response = \
+                    AdminWebUi.set_date_and_time(self, params, check_success)
+        except SettingConfigError as e:
+            return({'status_code': 400, 'msg': e.message})
+        except requests.HTTPError:
+            return({'status_code': 0, 'msg': '--'.join(
+                [e.msg, e.original_error.message])})
+        else:
+            return response
+
+
+
+
+
+
 
 

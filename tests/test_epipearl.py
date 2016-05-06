@@ -16,7 +16,7 @@ import requests
 import httpretty
 from sure import expect, should, should_not
 
-from epipearl import Epipearl
+from epipearl.epipearl import Epipearl
 
 epiphan_url = "http://fake.example.edu"
 epiphan_user = "user"

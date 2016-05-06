@@ -26,7 +26,8 @@ with open('HISTORY.md') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
 requirements = [
-    "requests"
+    "requests",
+    "beautifulsoup4"
 ]
 
 test_requirements = [
