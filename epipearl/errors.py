@@ -12,6 +12,6 @@ class SettingConfigError(Error):
 class RequestsError(Error):
     """unexpected error from requests call."""
     def __init__(self, message, original_error):
-        super(RequestError, self).__init__(self,message)
+        super(RequestsError, self).__init__(self,message)
         self.original_error = original_error
 
