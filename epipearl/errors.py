@@ -15,3 +15,5 @@ class RequestsError(Error):
         super(RequestsError, self).__init__(self,message)
         self.original_error = original_error
 
+class IndiscernibleResponseFromWebUiError(Error):
+    """unexpected result from epiphan device; call failed"""

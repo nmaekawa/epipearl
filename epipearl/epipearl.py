@@ -19,7 +19,7 @@ from urlparse import urljoin
 from errors import RequestsError
 from errors import SettingConfigError
 from endpoints.admin import Admin
-from endpoints.admin_webui import AdminWebUi
+from endpoints.webui_config import WebUiConfig
 
 _default_timeout = 5
 
@@ -163,204 +163,39 @@ class Epipearl(object):
 
     @handle_http_exceptions()
     def set_ntp(self, server, timezone):
-        """set ntp server and timezone in epiphan."""
+        """set ntp server and timezone in epiphan.
 
-        def check_tz(tag):
-            return tag.name == 'option' and \
-                    tag.has_attr('selected') and \
-                    tag.has_attr('value') and \
-                    tag['value'] == timezone
+        raises SettingConfigError if error message from webui
+            or if the configs didn't update webui (didn't take)
+        raises requests.RequestException|ConnectionError|Timeout
+        """
+        return WebUiConfig.set_ntp(
+                client=self,
+                server=server,
+                timezone=timezone)
 
-        def check_ntp_proto(tag):
-            return tag.name == 'option' and \
-                    tag.has_attr('selected') and \
-                    tag.has_attr('value') and \
-                    tag['value'] == 'NTP'
-
-        def check_ntp_sync(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'rdate_auto' and \
-                    tag.has_attr('checked') and \
-                    tag.has_attr('value') and \
-                    tag['value'] == 'auto'
-
-        def check_ntp_server(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'server' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == server
-
-        params = {'server': server, 'tz': timezone,
-                'fn': 'date', 'rdate': 'auto', 'rdate_proto': 'NTP'}
-
-        check_success = [
-                {'emsg': 'timezone setting expected(%s)' % timezone,
-                    'func': check_tz},
-                {'emsg': 'protocol setting expecetd(NTP)',
-                    'func': check_ntp_proto},
-                {'emsg': 'expected to enable sync(auto)',
-                    'func': check_ntp_sync},
-                {'emsg': 'expected ntp server(%s)' % server,
-                    'func': check_ntp_server}]
-        try:
-            response = \
-                    AdminWebUi.configuration(
-                            client=self,
-                            path='admin/timesynccfg',
-                            params=params,
-                            check_success=check_success)
-
-        except SettingConfigError as e:
-            return({'status_code': 400, 'msg': e.message})
-        except requests.HTTPError as e:
-            return({'status_code': 0, 'msg': '--'.join(
-                [e.msg, e.original_error.message])})
-        else:
-            return response
 
     @handle_http_exceptions()
     def set_touchscreen(self, screen_timeout=600):
-        """ disable settings changes and recording via touchscreen."""
+        """ disable settings changes and recording via touchscreen.
 
-        def check_display_enabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'epiScreenEnabled' and \
-                    tag.has_attr('checked')
-
-        def check_preview_enabled(tag):
-            return tag.har_attr('id') and \
-                    tag['id'] == 'showVideo' and \
-                    tag.has_attr('checked')
-
-        def check_status_displayed(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'showInfo' and \
-                    tag.har_attr('checked')
-
-        def check_settings_disabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'changeSettings' and \
-                    not tag.has_attr('checked')
-
-        def check_recording_disabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'recordControl' and \
-                    not tag.has_attr('checked')
-
-        def check_screen_timeout(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'epiScreenTimeout' and \
-                    tag.has_attr('value') and \
-                    int(tag['value']) == screen_timeout
-
-        params = {'pdf_form_id': 'fn_episcreen',
-                'epiScreenEnabled': 'on',
-                'epiScreenTimeout': screen_timeout,
-                'showVideo': 'on',
-                'showInfo': 'on'}
-
-        check_success = [
-                {'emsg': 'epiScreenEnabled ON expected',
-                    'func': check_display_enabled},
-                {'emsg': 'epiScreenTimeout expected(%s)' % screen_timeout,
-                    'func': check_screen_timeout},
-                {'emsg': 'showPreview ON expected',
-                    'func': check_preview_enabled},
-                {'emsg': 'showSystemStatus ON expected',
-                    'func': check_status_displayed},
-                {'emsg': 'changeSettings OFF expected',
-                    'func': check_settings_disabled},
-                {'emsg': 'recordControl OFF expected',
-                    'func': check_recording_disabled}]
-        try:
-            response = \
-                AdminWebUi.configuration(
-                        client=self,
-                        path='admin/touchscreencfg',
-                        params=params,
-                        check_success=check_success)
-
-        except SettingConfigError as e:
-            return ({'status_code': 400, 'msg': e.message})
-        except requests.HTTPError as e:
-            return({'status_code': 0, 'msg': '--'.join(
-                [e.msg, e.original_error.message])})
-        else:
-            return response
+        raises SettingConfigError if error message from webui
+            or if the configs didn't update webui (didn't take)
+        raises requests.RequestException|ConnectionError|Timeout
+        """
+        return WebUiConfig.set_touchscreen(
+                client=self,
+                screen_timeout=screen_timeout)
 
 
     @handle_http_exceptions
-    def set_remote_support_and_permanent_logs(self, log_enabled=True):
-        """enable/disable permanent logs."""
-        _default_server = 'epiphany.epiphan.com'
-        _default_port = '30'
+    def set_permanent_logs(self, log_enabled=True):
+        """enable/disable permanent logs.
 
-        def check_remote_support_enabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'enabledssh' and \
-                    tag.has_attr('checked')
-
-        def check_server_connection_enabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'tunnel' and \
-                    tag.has_attr('checked')
-
-        def check_server_address(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'tunnelsrv' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == _default_server
-
-        def check_server_port(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'tunnelport' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == _default_port
-
-        def check_permanent_logs_enabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'permanent_logs' and \
-                    tag.has_attr('checked')
-        def check_permanent_logs_disabled(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'permanent_logs' and \
-                    not tag.has_attr('checked')
-
-        params = {'enablessh': 'on',
-                'tunnel': 'on',
-                'tunnelsrv': _default_server,
-                'tunnelport': _default_port}
-
-        check_success = [
-                {'emsg': 'remote_support ON expected',
-                    'func': check_remote_support_enabled},
-                {'emsg': 'server_connection ON expected',
-                    'func': check_server_connection_enabled},
-                {'emsg': 'server_address expected(%s)' % _default_server,
-                    'func': check_server_address},
-                {'emsg': 'server_port expected(%s)' % _default_port,
-                    'func': check_server_port}]
-
-        if log_enabled:
-            params['permanent_logs']= 'on'
-            check_success.append(
-                {'emsg': 'permanent logs expected to be ON',
-                    'func': check_permanent_logs_enabled})
-        else:
-            check_success.append(
-                {'emsg': 'permanent logs expected to be OFF',
-                    'func': check_permanent_logs_disabled})
-        try:
-            response = \
-                    AdminWebUi.configuration(
-                            client=self,
-                            path='admin/maintenancetfg',
-                            params=params,
-                            check_success=check_success)
-        except SettingConfigError as e:
-            return ({'status_code': 400, 'msg': e.message})
-        except requests.HTTPError as e:
-            return ({'status_code': 0, 'msg': '--'.join(
-                [e.msg, e.original_error.message])})
-        else:
-            return response
+        raises SettingConfigError if error message from webui
+            or if the configs didn't update webui (didn't take)
+        raises requests.RequestException|ConnectionError|Timeout
+        """
+        return WebUiConfig.set_support_and_permanent_logs(
+                client=self,
+                log_enabled=log_enabled)

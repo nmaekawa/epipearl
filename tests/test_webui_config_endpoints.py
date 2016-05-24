@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-test_config
+test_webui_config_endpoints
 ----------------------------------
 
-Tests for `epipearl` config module.
+Tests for `epipearl` config ui endpoints
+
 """
 
 import os
@@ -18,6 +19,7 @@ from sure import expect, should, should_not
 
 from conftest import resp_html_data
 from epipearl import Epipearl
+from epipearl.endpoints.webui_config import WebUiConfig
 from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
@@ -31,11 +33,11 @@ livetest = pytest.mark.skipif(
         reason = ( "need --runlive option to run, plus env vars",
             "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE" ) )
 
-class TestWebUiConfig(object):
+
+class TestConfiguration(object):
 
     def setup_method(self, method):
-        self.c = Epipearl( epiphan_url, epiphan_user, epiphan_passwd )
-
+        self.c = Epipearl(epiphan_url, epiphan_user, epiphan_passwd)
 
     @httpretty.activate
     def test_set_ntp_ok(self):
@@ -43,9 +45,12 @@ class TestWebUiConfig(object):
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
-        response = self.c.set_ntp(server='north-america.pool.ntp.org',
+
+        response = WebUiConfig.set_ntp(
+                client=self.c,
+                server='north-america.pool.ntp.org',
                 timezone='US/Alaska')
-        assert response
+        assert response is True
 
 
     @httpretty.activate
@@ -56,33 +61,24 @@ class TestWebUiConfig(object):
                 body=resp_data)
 
         with pytest.raises(SettingConfigError) as e:
-            response = self.c.set_ntp(server='north-america.pool.ntp.org',
-                    timezone='xuxu')
+            response = WebUiConfig.set_ntp(
+                    client=self.c,
+                    server='north-america.pool.ntp.org',
+                    timezone='Kawabonga')
         assert 'Unsupported time zone' in e.value.message
 
 
     @httpretty.activate
-    def test_set_ntp_server_did_not_take(self):
-        resp_data = resp_html_data('set_date_and_time', 'ok')
+    def test_set_ntp_proto_didnot_take(self):
+        resp_data = resp_html_data('set_date_and_time', 'proto_didnot_take')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
 
         with pytest.raises(SettingConfigError) as e:
-            response = self.c.set_ntp(server='google.com', timezone='US/Alaska')
-        assert 'expected ntp server(google.com)' in e.value.message
-
-
-    @httpretty.activate
-    def test_set_ntp_server_error(self):
-        resp_data = resp_html_data('set_date_and_time', 'ok')
-        httpretty.register_uri(httpretty.POST,
-                '%s/admin/timesynccfg' % epiphan_url,
-                body='does not matter',
-                status=501)
-
-        with pytest.raises(requests.HTTPError) as e:
-            response = self.c.set_ntp(server='google.com', timezone='US/Alaska')
-        assert 'Server Error' in e.value.message
-
+            response = WebUiConfig.set_ntp(
+                    client=self.c,
+                    server='north-america.pool.ntp.org',
+                    timezone='US/Alaska')
+        assert 'protocol setting expected(NTP)' in e.value.message
 
