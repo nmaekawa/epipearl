@@ -148,7 +148,7 @@ class TestChannel(object):
         with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
             response = WebUiChannel.rename_channel(
                     client=self.c, channel_id='5', channel_name='new channel name')
-        assert 'failed to call' in e.value.message
+        assert 'error from call' in e.value.message
 
 
     @httpretty.activate
@@ -188,7 +188,7 @@ class TestChannel(object):
             response = WebUiChannel.set_channel_layout(
                     client=self.c, channel_id='39',
                     layout='{}')
-        assert 'failed to call' in e.value.message
+        assert 'error from call' in e.value.message
 
 
     @httpretty.activate
@@ -293,3 +293,152 @@ class TestChannel(object):
             response = WebUiChannel.delete_recorder(
                     client=self.c, recorder_id='39')
         assert 'successful deletion message not found' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_ok(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+
+        response = WebUiChannel.create_recorder(client=self.c)
+        assert int(response) == 57
+
+
+
+    @httpretty.activate
+    def test_create_recorder_status200(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=200,
+                body='{"success":false}')
+
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiChannel.create_recorder(client=self.c)
+        assert 'expect response status 302, but got (200)' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_status500(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url, status=500)
+
+        with pytest.raises(requests.HTTPError) as e:
+            response = WebUiChannel.create_recorder(client=self.c)
+        assert '500 Server Error' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_status301(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=301,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiChannel.create_recorder(client=self.c)
+        assert 'expect response STATUS 302, but got (301)' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_missing_location(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302)
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiChannel.create_recorder(client=self.c)
+        assert 'location header missing' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_location_missing_id(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302,
+                location='/admin/recorderXX/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorderXX/archive' % epiphan_url, status=200)
+
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiChannel.create_recorder(client=self.c)
+        assert 'cannot parse channel created from location' in e.value.message
+
+
+    @httpretty.activate
+    def test_rename_recorder_ok(self):
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=200)
+
+        response = WebUiChannel.rename_recorder(
+                client=self.c, recorder_id='5', recorder_name='new RECORDER name')
+        assert response == 'new RECORDER name'
+        assert httpretty.last_request().parsed_body['channel'][0] == 'm5'
+
+
+    @httpretty.activate
+    def test_set_recorder_channels_ok(self):
+        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder3/archive' % epiphan_url,
+                body=resp_data,
+                status=200)
+        response = WebUiChannel.set_recorder_channels(client=self.c,
+                recorder_id=3,
+                channel_list=['3', '2'])
+        assert response
+        # TODO: live test for this list
+        assert set(httpretty.last_request().parsed_body['rc[]']) == set(['2', '3'])
+
+
+    @httpretty.activate
+    def test_set_recorder_channels_didnt_take(self):
+        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder3/archive' % epiphan_url,
+                body=resp_data,
+                status=200)
+        with pytest.raises(SettingConfigError) as e:
+            response = WebUiChannel.set_recorder_channels(client=self.c,
+                    recorder_id=3,
+                    channel_list=['3', '4'])
+        assert set(httpretty.last_request().parsed_body['rc[]']) == \
+                set(['4', '3'])
+        assert 'channel(4) missing for recorder(3)' in e.value.message
+
+
+    @httpretty.activate
+    def test_recorder_settings_ok(self):
+        resp_data = resp_html_data('set_recorder_settings', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder3/archive' % epiphan_url,
+                body=resp_data,
+                status=200)
+        response = WebUiChannel.set_recorder_settings(client=self.c,
+                recorder_id=3,
+                output_format='ts')
+        assert response
+
+
+    @httpretty.activate
+    def test_recorder_settings_didnt_take(self):
+        resp_data = resp_html_data('set_recorder_settings', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder3/archive' % epiphan_url,
+                body=resp_data,
+                status=200)
+        with pytest.raises(SettingConfigError) as e:
+            response = WebUiChannel.set_recorder_settings(client=self.c,
+                    recorder_id=3,
+                    output_format='avi')
+        assert 'output_format expected(avi)' in e.value.message
+
+

@@ -26,17 +26,18 @@ class WebUiChannel(object):
     """
 
     @classmethod
-    def create_channel(cls, client):
-        """returns channel_id just created or exception."""
-        path = '/admin/add_channel.cgi'
+    def create_channel_or_recorder(cls, client, create_channel=True):
+        """returns channel_id or recorder_id just created or exception."""
+        path = '/admin/add_channel.cgi' if create_channel \
+                else '/admin/add_recorder.cgi'
         try:
             r = client.get(path=path)
         except (requests.HTTPError,
                 requests.RequestException,
                 requests.ConnectionError,
                 requests.Timeout) as e:
-            msg = 'failed to call %s/admin/add_channel.cgi - %s' \
-                    % (client.url, e.message)
+            msg = 'failed to call %s/%s - %s' \
+                    % (client.url, path, e.message)
             logger = logging.getLogger(__name__)
             logger.warning(msg)
             raise
@@ -60,8 +61,9 @@ class WebUiChannel(object):
                     raise IndiscernibleResponseFromWebUiError(msg)
 
                 if 'location' in r.history[0].headers: # this is actually success
-                    p = re.findall(r'/admin/channel(\d+)',
-                            r.history[0].headers['location'])
+                    pattern = r'/admin/channel(\d+)' if create_channel \
+                            else r'/admin/recorder(\d+)'
+                    p = re.findall(pattern, r.history[0].headers['location'])
                     if len(p) == 1:
                         return p[0]  # SUCCESS!
                     else:
@@ -85,6 +87,13 @@ class WebUiChannel(object):
                 logger.warning(msg)
                 raise IndiscernibleResponseFromWebUiError(msg)
 
+
+    @classmethod
+    def create_channel(cls, client):
+        """returns channel_id just created or exception."""
+        return cls.create_channel_or_recorder(client)
+
+
     @classmethod
     def rename_channel(cls, client, channel_id, channel_name):
         """returns channel_name when success, or raises exception."""
@@ -105,7 +114,7 @@ class WebUiChannel(object):
             if r.status_code == 200:  # all went well
                 return channel_name
             raise IndiscernibleResponseFromWebUiError(
-                   'failed to call %s/%s - response status(%s)' % \
+                   'error from call %s/%s - response status(%s)' % \
                            (client.url, path, r.status_code))
 
 
@@ -127,37 +136,13 @@ class WebUiChannel(object):
             if r.status_code == 200:
                 return r.text
             raise IndiscernibleResponseFromWebUiError(
-                    'failed to call %s/%s - response status(%s)' % \
+                    'error from call %s/%s - response status(%s)' % \
                             (client.url, path, r.status_code))
 
     @classmethod
     def set_channel_rtmp(cls, client, channel_id,
             rtmp_url, rtmp_stream, rtmp_usr, rtmp_pwd):
         """returns true or raises exception."""
-
-        def check_rtmp_url(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'rtmp_url' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == rtmp_url
-
-        def check_rtmp_stream(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'rtmp_stream' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == rtmp_stream
-
-        def check_rtmp_usr(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'rtmp_username' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == rtmp_usr
-
-        def check_rtmp_pwd(tag):
-            return tag.has_attr('id') and \
-                    tag['id'] == 'rtmp_password' and \
-                    tag.has_attr('value') and \
-                    tag['value'] == rtmp_pwd
 
         params = {'rtmp_url': rtmp_url,
                 'rtmp_stream': rtmp_stream,
@@ -168,13 +153,17 @@ class WebUiChannel(object):
 
         check_success = [
                 {'emsg': 'rtmp_usr expected(%s)' % rtmp_usr,
-                    'func': check_rtmp_usr},
+                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                        tag_id='rtmp_username', value=rtmp_usr)},
                 {'emsg': 'rtmp_url expected(%s)' % rtmp_url,
-                    'func': check_rtmp_url},
+                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                        tag_id='rtmp_url', value=rtmp_url)},
                 {'emsg': 'rtmp_stream expected(%s)' % rtmp_stream,
-                    'func': check_rtmp_stream},
+                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                        tag_id='rtmp_stream', value=rtmp_stream)},
                 {'emsg': 'not the rtmp_pwd expected',
-                    'func': check_rtmp_pwd}]
+                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                        tag_id='rtmp_password', value=rtmp_pwd)}]
 
         return WebUiConfig.configuration(
                 client=client,
@@ -220,18 +209,88 @@ class WebUiChannel(object):
 
 
     @classmethod
-    def create_recorder(cls, client, params, check_success):
-        raise NotImplementedError('create_recorder() not implemented yet.')
+    def create_recorder(cls, client):
+        return cls.create_channel_or_recorder(client, create_channel=False)
+
 
     @classmethod
-    def set_recorder_channels(cls, client, params, check_success):
-        raise NotImplementedError(
-                'set_recorder_channels() not implemented yet.')
+    def rename_recorder(cls, client, recorder_id, recorder_name):
+        return cls.rename_channel(client, 'm%s' % recorder_id, recorder_name)
+
 
     @classmethod
-    def set_recorder_settings(cls, client, params, check_success):
-        raise NotImplementedError(
-                'set_recorder_settings() not implemented yet.')
+    def set_recorder_channels(cls, client, recorder_id, channel_list):
+        """returns true or raise exception."""
+
+        # note in this case, checks won't catch channels that are _not_
+        # supposed to be configured, if the ones that are supposed to be
+        # configured are correct.
+        check_success = []
+        for i in channel_list:
+            check_success.append({
+                'emsg': 'channel(%s) missing for recorder(%s) config' % \
+                        (i, recorder_id),
+                        'func': WebUiConfig.check_multivalue_select_funcfactory(\
+                                name='rc[]', value=i)} )
+
+        channel_list_param = [('rc[]', x) for x in channel_list]
+        params = [('pfd_form_id', 'recorder_channels')] + channel_list_param
+        path = '/admin/recorder%s/archive' % recorder_id
+
+        return WebUiConfig.configuration(
+                client=client,
+                params=params,
+                path=path,
+                check_success=check_success)
+
+
+    @classmethod
+    def set_recorder_settings(cls, client, recorder_id,
+            recording_timelimit_in_minutes=360, # 6h
+            recording_sizelimit_in_kilobytes=64000000, # 64G
+            output_format='avi', # or mov, mp4, ts(mpeg-ts)
+            user_prefix='',      # prefix for recording file
+            afu_enabled='on',    # this means auto-upload disabled!
+            upnp_enabled=None):
+
+        #
+        # 06jun16 naomi: upnp and afu(automatic file upload) have dependencies
+        # that are not treated by this api call -- these features must be enabled
+        # for the device and configured in 'automatic file upload' and 'UPnP'
+        # webui calls to be implemented in epipearl.endpoints.webui_config.
+        #
+
+        timelimit = '%d:%02d:00' % (recording_timelimit_in_minutes/60,
+                recording_timelimit_in_minutes%60)
+
+        check_success = [
+                {'emsg': 'timelimit expected(%s)' % timelimit,
+                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                        value=timelimit)},
+                {'emsg': 'sizelimit expected(%s)' % recording_sizelimit_in_kilobytes,
+                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                        value=str(recording_sizelimit_in_kilobytes))},
+                {'emsg': 'output_format expected(%s)' % output_format,
+                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                        value=output_format)},
+                {'emsg': 'user_prefix expected(%s)' % user_prefix,
+                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                        tag_id='user_prefix', value=user_prefix)}]
+        params = {'pfd_form_id': 'rec_settings',
+                'timelimit': timelimit,
+                'sizelimit': recording_sizelimit_in_kilobytes,
+                'output_format': output_format,
+                'user_prefix': user_prefix,
+                'afu_enabled': afu_enabled,
+                'upnp_enabled': upnp_enabled}
+        path = '/admin/recorder%s/archive' % recorder_id
+
+        return WebUiConfig.configuration(
+                client=client,
+                params=params,
+                path=path,
+                check_success=check_success)
+
 
     @classmethod
     def delete_recorder(cls, client, recorder_id):
@@ -243,9 +302,6 @@ class WebUiChannel(object):
         return cls.delete_channel(client, 'm%s'% recorder_id)
 
 
-    @classmethod
-    def update_firmware(cls, client, params, check_success):
-        raise NotImplementedError('update_firmware() not implemented yet.')
 
     #
     # dce custom api
