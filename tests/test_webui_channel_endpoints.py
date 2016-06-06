@@ -395,8 +395,18 @@ class TestChannel(object):
                 recorder_id=3,
                 channel_list=['3', '2'])
         assert response
-        # TODO: live test for this list
         assert set(httpretty.last_request().parsed_body['rc[]']) == set(['2', '3'])
+
+
+    @livetest
+    def test_live_set_recorder_channels(self):
+        ca_url = os.environ['EPI_URL']
+        epicli = Epipearl( ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+
+        response = WebUiChannel.set_recorder_channels(client=epicli,
+                recorder_id=2,
+                channel_list=['3', '2'])
+        assert response
 
 
     @httpretty.activate

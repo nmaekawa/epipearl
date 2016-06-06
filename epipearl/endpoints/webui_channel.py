@@ -300,14 +300,3 @@ class WebUiChannel(object):
             e.g. recorder_id = 2 (corresponding channel_id is 'm2')
         """
         return cls.delete_channel(client, 'm%s'% recorder_id)
-
-
-
-    #
-    # dce custom api
-    #
-
-    @classmethod
-    def set_mhpearl_settings(cls, settings):
-        raise NotImplementedError(
-                'set_mhpearl_settings() not implemented yet.')
