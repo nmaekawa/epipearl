@@ -92,7 +92,6 @@ vendor = Epiphan Systems Inc."""
         assert response
 
 
-
     @livetest
     def test_actual_set_params( self ):
         channel = '1'
@@ -112,4 +111,3 @@ vendor = Epiphan Systems Inc."""
             'publish_type':'' } )
 
         response['publish_type'].should_not.be.different_of( os.environ['EPI_PUBLISH_TYPE'] )
-

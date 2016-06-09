@@ -9,11 +9,9 @@ class SettingConfigError(Error):
     """error in settings configs, usually benign warnings."""
 
 
-class RequestsError(Error):
-    """unexpected error from requests call."""
-    def __init__(self, message, original_error):
-        super(RequestsError, self).__init__(self,message)
-        self.original_error = original_error
-
 class IndiscernibleResponseFromWebUiError(Error):
     """unexpected result from epiphan device; call failed"""
+
+
+class RequestsError(Error):
+    """error during connection or 500."""

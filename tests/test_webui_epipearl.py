@@ -1,0 +1,192 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+test_epipearl
+----------------------------------
+
+Tests for `epipearl` module.
+"""
+
+import os
+os.environ['TESTING'] = 'True'
+
+import pytest
+import requests
+import httpretty
+from sure import expect, should, should_not
+
+from conftest import resp_html_data
+from epipearl.epipearl import Epipearl
+from epipearl.errors import RequestsError
+from epipearl.errors import SettingConfigError
+
+epiphan_url = "http://fake.example.edu"
+epiphan_user = "user"
+epiphan_passwd = "passwd"
+
+# control skipping live tests according to command line option --runlive
+# requires env vars EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE
+livetest = pytest.mark.skipif(
+        not pytest.config.getoption("--runlive"),
+        reason = ("need --runlive option to run, plus env vars",
+            "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE"))
+
+
+class TestEpipearl(object):
+
+    def setup(self):
+        self.c = Epipearl(epiphan_url, epiphan_user, epiphan_passwd)
+
+
+    @httpretty.activate
+    def test_create_channel_ok(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_channel.cgi' % epiphan_url,
+                status=302,
+                location='/admin/channel57/mediasources')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/channel57/mediasources' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=200)
+
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.sdi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.analog-b"}}],"background":"#000000","nosignal":{"id":"default"}}'
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/channel57/layouts/1' % epiphan_url,
+                body=layout, status=200)
+
+        response = self.c.create_channel('channel_blah', layout)
+        assert response
+
+
+    @httpretty.activate
+    def test_create_channel_failed_create(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_channel.cgi' % epiphan_url,
+                status=500)
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.sdi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.analog-b"}}],"background":"#000000","nosignal":{"id":"default"}}'
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_channel('channel_blah', layout)
+        assert 'failed to create channel(channel_blah)' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_channel_failed_rename(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_channel.cgi' % epiphan_url,
+                status=302,
+                location='/admin/channel57/mediasources')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/channel57/mediasources' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=500)
+
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.sdi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.analog-b"}}],"background":"#000000","nosignal":{"id":"default"}}'
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_channel('channel_blah', layout)
+        assert 'failed to rename channel(57)(channel_blah)' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_channel_failed_set_layout(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_channel.cgi' % epiphan_url,
+                status=302,
+                location='/admin/channel57/mediasources')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/channel57/mediasources' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=200)
+
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.hdmi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.sdi-a"}}],"background":"#000000","nosignal":{"id":"default"}}'
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/channel57/layouts/1' % epiphan_url,
+                body=layout, status=500)
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_channel('channel_blah', layout)
+        assert 'failed to set layout to channel(57)(channel_blah)' \
+                in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_ok(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=200)
+        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder57/archive' % epiphan_url,
+                body=resp_data,
+                status=200)
+
+        response = self.c.create_recorder(recorder_name='recorder_xablau',
+                channel_list=['3', '2'])
+        assert response
+        assert httpretty.last_request().parsed_body['rc[]'] == ['3', '2']
+
+
+    @httpretty.activate
+    def test_create_recorder_failed_create(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=502,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=500)
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_recorder(recorder_name='recorder_xablau',
+                    channel_list=['3', '2'])
+        assert 'failed to create recorder(recorder_xablau)' in e.value.message
+
+
+    @httpretty.activate
+    def test_create_recorder_failed_rename(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=500)
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_recorder(recorder_name='recorder_xablau',
+                    channel_list=['3', '2'])
+        assert 'failed to rename recorder(57)(recorder_xablau)' \
+                in e.value.message
+
+    @httpretty.activate
+    def test_create_recorder_failed_set_channels(self):
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/add_recorder.cgi' % epiphan_url,
+                status=302,
+                location='/admin/recorder57/archive')
+        httpretty.register_uri(httpretty.GET,
+                '%s/admin/recorder57/archive' % epiphan_url, status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
+                status=200)
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/recorder57/archive' % epiphan_url,
+                status=500)
+
+        with pytest.raises(RequestsError) as e:
+            response = self.c.create_recorder(recorder_name='recorder_xablau',
+                    channel_list=['3', '2'])
+        assert 'failed to set channels for recorder(57)(recorder_xablau)' \
+                in e.value.message

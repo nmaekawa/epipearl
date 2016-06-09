@@ -36,11 +36,9 @@ class WebUiChannel(object):
                 requests.RequestException,
                 requests.ConnectionError,
                 requests.Timeout) as e:
-            msg = 'failed to call %s/%s - %s' \
-                    % (client.url, path, e.message)
-            logger = logging.getLogger(__name__)
-            logger.warning(msg)
-            raise
+            msg = 'failed to call %s/%s - %s' % (client.url, path, e.message)
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
 
         else:
             # requests.get will follow the redirect and return 200
@@ -50,14 +48,15 @@ class WebUiChannel(object):
 
             if r.status_code == 200:
                 if not r.history: # status 200 is bad in this case
-                    msg += '- expect response status 302, but got (%s)' % r.status_code
-                    logger.warning(msg)
+                    msg += '- expect response status 302, but got (%s)' % \
+                            r.status_code
+                    logger.error(msg)
                     raise IndiscernibleResponseFromWebUiError(msg)
 
                 if r.history[0].status_code != 302:
                     msg += '- expect response STATUS 302, but got (%s)' \
                             % r.history[0].status_code
-                    logger.warning(msg)
+                    logger.error(msg)
                     raise IndiscernibleResponseFromWebUiError(msg)
 
                 if 'location' in r.history[0].headers: # this is actually success
@@ -67,24 +66,25 @@ class WebUiChannel(object):
                     if len(p) == 1:
                         return p[0]  # SUCCESS!
                     else:
-                        msg += '- cannot parse channel created from location header(%s)' \
-                                % r.history[0].headers['location']
-                        logger.warning(msg)
+                        msg += '- cannot parse channel created from location '
+                        msg += 'header(%s)' % r.history[0].headers['location']
+                        logger.error(msg)
                         raise IndiscernibleResponseFromWebUiError(msg)
 
                 else: # 302, no header location found
                     msg += ' - missing header location for response status 302'
-                    logger.warning(msg)
+                    logger.error(msg)
                     raise IndiscernibleResponseFromWebUiError(msg)
 
             else:
                 if r.status_code == 302:
-                    # this means that the location header is not present, otherwise
-                    # requests.get would follow the redirect and return 200
+                    # this means that the location header is not
+                    # present, otherwise requests.get would follow
+                    # the redirect and return 200
                     msg += '- location header missing.'
                 else: # status code not expected (!= 302)
                     msg += ' - expect response status 302, but GOT (%s)' % r.status_code
-                logger.warning(msg)
+                logger.error(msg)
                 raise IndiscernibleResponseFromWebUiError(msg)
 
 
@@ -107,15 +107,16 @@ class WebUiChannel(object):
                 requests.ConnectionError,
                 requests.Timeout) as e:
             msg = 'failed to call %s/%s - %s' % (client.url, path, e.message)
-            logger = logging.getLogger(__name__)
-            logger.warning(msg)
-            raise e
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
         else:
             if r.status_code == 200:  # all went well
                 return channel_name
-            raise IndiscernibleResponseFromWebUiError(
-                   'error from call %s/%s - response status(%s)' % \
-                           (client.url, path, r.status_code))
+
+            msg = 'error from call %s/%s - response status(%s)' % \
+                    (client.url, path, r.status_code)
+            logging.getLogger(__name__).error(msg)
+            raise IndiscernibleResponseFromWebUiError(msg)
 
 
     @classmethod
@@ -129,15 +130,16 @@ class WebUiChannel(object):
                 requests.ConnectionError,
                 requests.Timeout) as e:
             msg = 'failed to call %s/%s - %s' % (client.url, path, e.message)
-            logger = logging.getLogger(__name__)
-            logger.warning(msg)
-            raise e
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
         else:
             if r.status_code == 200:
                 return r.text
-            raise IndiscernibleResponseFromWebUiError(
-                    'error from call %s/%s - response status(%s)' % \
-                            (client.url, path, r.status_code))
+
+            msg = 'error from call %s/%s - response status(%s)' % \
+                    (client.url, path, r.status_code)
+            logging.getLogger(__name__).error(msg)
+            raise IndiscernibleResponseFromWebUiError(msg)
 
     @classmethod
     def set_channel_rtmp(cls, client, channel_id,

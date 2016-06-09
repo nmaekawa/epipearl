@@ -21,6 +21,7 @@ from conftest import resp_html_data
 from epipearl import Epipearl
 from epipearl.endpoints.webui_channel import WebUiChannel
 from epipearl.errors import IndiscernibleResponseFromWebUiError
+from epipearl.errors import RequestsError
 from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
@@ -70,7 +71,7 @@ class TestChannel(object):
         httpretty.register_uri(httpretty.GET,
                 '%s/admin/add_channel.cgi' % epiphan_url, status=500)
 
-        with pytest.raises(requests.HTTPError) as e:
+        with pytest.raises(RequestsError) as e:
             response = WebUiChannel.create_channel(client=self.c)
         assert '500 Server Error' in e.value.message
 
@@ -133,9 +134,10 @@ class TestChannel(object):
                 '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
                 status=404)
 
-        with pytest.raises(requests.HTTPError) as e:
+        with pytest.raises(RequestsError) as e:
             response = WebUiChannel.rename_channel(
-                    client=self.c, channel_id='5', channel_name='new channel name')
+                    client=self.c, channel_id='5',
+                    channel_name='new channel name')
         assert '404 Client Error' in e.value.message
 
 
@@ -171,7 +173,7 @@ class TestChannel(object):
                 '%s/admin/channel39/layouts/1' % epiphan_url,
                 status=403)
 
-        with pytest.raises(requests.HTTPError) as e:
+        with pytest.raises(RequestsError) as e:
             response = WebUiChannel.set_channel_layout(
                     client=self.c, channel_id='39',
                     layout='{}')
@@ -237,20 +239,6 @@ class TestChannel(object):
         response = WebUiChannel.delete_channel(
                 client=self.c, channel_id='39')
         assert response
-
-
-    @httpretty.activate
-    def test_delete_channel_ok(self):
-        resp_data = resp_html_data('delete_channel', 'ok')
-        httpretty.register_uri(httpretty.POST,
-                '%s/admin/recorder39/archive' % epiphan_url,
-                body=resp_data,
-                status=200)
-
-        response = WebUiChannel.delete_channel(
-                client=self.c, channel_id='m39')
-        assert response
-        assert httpretty.last_request().parsed_body['deleteid'][0] == 'm39'
 
 
     @httpretty.activate
@@ -326,7 +314,7 @@ class TestChannel(object):
         httpretty.register_uri(httpretty.GET,
                 '%s/admin/add_recorder.cgi' % epiphan_url, status=500)
 
-        with pytest.raises(requests.HTTPError) as e:
+        with pytest.raises(RequestsError) as e:
             response = WebUiChannel.create_recorder(client=self.c)
         assert '500 Server Error' in e.value.message
 

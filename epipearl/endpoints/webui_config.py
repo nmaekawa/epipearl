@@ -70,9 +70,11 @@ class WebUiConfig(object):
 
         check_success = [
                 {'emsg': 'timezone setting expected(%s)' % timezone,
-                    'func': cls.check_singlevalue_select_funcfactory(value=timezone)},
+                    'func': cls.check_singlevalue_select_funcfactory(
+                        value=timezone)},
                 {'emsg': 'protocol setting expected(NTP)',
-                    'func': cls.check_singlevalue_select_funcfactory(value='NTP')},
+                    'func': cls.check_singlevalue_select_funcfactory(
+                        value='NTP')},
                 {'emsg': 'expected to enable sync(auto)',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='rdate_auto')},
@@ -189,17 +191,14 @@ class WebUiConfig(object):
                'emsg': string error msg if func returns false }]
         """
         try:
-            r = client.post(
-                    path,
-                    data=params)
+            r = client.post(path, data=params)
         except (requests.HTTPError,
                 requests.RequestException,
                 requests.ConnectionError,
                 requests.Timeout) as e:
             msg = 'failed to call %s/%s - %s' % (client.url, path, e.message)
-            logger = logging.getLogger(__name__)
-            logger.warning(msg)
-            raise
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
         else:
             msg = 'error from call %s/%s ' % (client.url, path)
             logger = logging.getLogger(__name__)
@@ -210,7 +209,7 @@ class WebUiConfig(object):
                 if len(emsg) > 0:     # concat error messages
                     allmsgs = [x['msg'] for x in emsg if 'msg' in x]
                     msg += '\n'.join(allmsgs)
-                    logger.warning(msg)
+                    logger.error(msg)
                     raise SettingConfigError(msg)
                 else:
                     # no error msg, check that updates took place
@@ -218,14 +217,15 @@ class WebUiConfig(object):
                         tags = soup.find_all(c['func'])
                         if not tags:
                             msg += '- %s' % c['emsg']
-                            logger.warning(msg)
+                            logger.error(msg)
                             raise SettingConfigError(msg)
                 # all is well
                 return True
 
-            raise IndiscernibleResponseFromWebUiError(
-                    'error in call %s/%s - response status(%s)' % \
-                            (client.url, path, r.status_code))
+            msg = 'error in call %s/%s - response status(%s)' % \
+                    (client.url, path, r.status_code)
+            logging.getLogger(__name__).error(msg)
+            raise IndiscernibleResponseFromWebUiError(msg)
 
 
     @classmethod
@@ -256,10 +256,13 @@ class WebUiConfig(object):
                     # msg or code or both not found!
                     pass
                 except Exception as e:
-                    logger = logging.getLogger(__name__)
-                    logger.warning(
-                            'could not scrape epiphan webui response: %s' \
-                                    % e.message)
+                    msg = 'could not scrape epiphan webui response: %s' \
+                            % e.message
+                    logger = logging.getLogger(__name__).error(msg)
+                    resp.append({
+                        'cat': 'error',
+                        'msg': msg,
+                        'code': 'html_parsing_error'})
                 else:
                     # msg and code ok
                     resp.append({
