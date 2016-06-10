@@ -17,7 +17,7 @@ import requests
 import httpretty
 from sure import expect, should, should_not
 
-from conftest import resp_html_data
+from conftest import resp_datafile
 from epipearl import Epipearl
 from epipearl.endpoints.webui_channel import WebUiChannel
 from epipearl.errors import IndiscernibleResponseFromWebUiError
@@ -195,7 +195,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_set_channel_rtmp_ok(self):
-        resp_data = resp_html_data('set_channel_rtmp', 'ok')
+        resp_data = resp_datafile('set_channel_rtmp', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/channel39/streamsetup' % epiphan_url,
                 body=resp_data,
@@ -212,7 +212,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_set_channel_rtmp_pwd_didnt_take(self):
-        resp_data = resp_html_data('set_channel_rtmp', 'ok')
+        resp_data = resp_datafile('set_channel_rtmp', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/channel39/streamsetup' % epiphan_url,
                 body=resp_data,
@@ -230,7 +230,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_delete_channel_ok(self):
-        resp_data = resp_html_data('delete_channel', 'ok')
+        resp_data = resp_datafile('delete_channel', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/channel39/status' % epiphan_url,
                 body=resp_data,
@@ -243,7 +243,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_delete_channel_success_not_found(self):
-        resp_data = resp_html_data('delete_channel', 'missing_success_message')
+        resp_data = resp_datafile('delete_channel', 'missing_success_message')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/channel39/status' % epiphan_url,
                 body=resp_data,
@@ -257,7 +257,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_delete_recorder_ok(self):
-        resp_data = resp_html_data('delete_recorder', 'ok')
+        resp_data = resp_datafile('delete_recorder', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder39/archive' % epiphan_url,
                 body=resp_data,
@@ -271,7 +271,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_delete_recorder_success_not_found(self):
-        resp_data = resp_html_data('delete_recorder', 'missing_success_message')
+        resp_data = resp_datafile('delete_recorder', 'missing_success_message')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder39/archive' % epiphan_url,
                 body=resp_data,
@@ -374,7 +374,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_set_recorder_channels_ok(self):
-        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        resp_data = resp_datafile('set_recorder_channels', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder3/archive' % epiphan_url,
                 body=resp_data,
@@ -399,7 +399,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_set_recorder_channels_didnt_take(self):
-        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        resp_data = resp_datafile('set_recorder_channels', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder3/archive' % epiphan_url,
                 body=resp_data,
@@ -415,7 +415,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_recorder_settings_ok(self):
-        resp_data = resp_html_data('set_recorder_settings', 'ok')
+        resp_data = resp_datafile('set_recorder_settings', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder3/archive' % epiphan_url,
                 body=resp_data,
@@ -428,7 +428,7 @@ class TestChannel(object):
 
     @httpretty.activate
     def test_recorder_settings_didnt_take(self):
-        resp_data = resp_html_data('set_recorder_settings', 'ok')
+        resp_data = resp_datafile('set_recorder_settings', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder3/archive' % epiphan_url,
                 body=resp_data,

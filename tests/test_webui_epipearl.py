@@ -16,7 +16,7 @@ import requests
 import httpretty
 from sure import expect, should, should_not
 
-from conftest import resp_html_data
+from conftest import resp_datafile
 from epipearl.epipearl import Epipearl
 from epipearl.errors import RequestsError
 from epipearl.errors import SettingConfigError
@@ -125,7 +125,7 @@ class TestEpipearl(object):
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
                 status=200)
-        resp_data = resp_html_data('set_recorder_channels', 'ok')
+        resp_data = resp_datafile('set_recorder_channels', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/recorder57/archive' % epiphan_url,
                 body=resp_data,
@@ -190,3 +190,75 @@ class TestEpipearl(object):
                     channel_list=['3', '2'])
         assert 'failed to set channels for recorder(57)(recorder_xablau)' \
                 in e.value.message
+
+
+    @httpretty.activate
+    def test_delete_channel_or_recorder_by_name_ok(self):
+        resp_data = resp_datafile(
+                'get_sysinfo', 'ok', ext='json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url,
+                body=resp_data,
+                status=200)
+        resp_data = resp_datafile('delete_channel', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/channel39/status' % epiphan_url,
+                body=resp_data,
+                status=200)
+        response = self.c.delete_channel_or_recorder_by_name('channel_blah')
+        assert response is True
+
+
+    @httpretty.activate
+    def test_delete_channel_or_recorder_by_name_error_json(self):
+        resp_data = resp_datafile(
+                'get_sysinfo', 'ok', ext='json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url,
+                body='',
+                status=200)
+        with pytest.raises(RequestsError) as e:
+            response = self.c.delete_channel_or_recorder_by_name('channel_blah')
+        assert 'No JSON object could be decoded' in e.value.message
+
+
+    @httpretty.activate
+    def test_delete_channel_or_recorder_by_name_delete404(self):
+        resp_data = resp_datafile(
+                'get_sysinfo', 'ok', ext='json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url,
+                body=resp_data,
+                status=200)
+        resp_data = resp_datafile('delete_channel', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/channel39/status' % epiphan_url,
+                body=resp_data,
+                status=404)
+        with pytest.raises(RequestsError) as e:
+            response = self.c.delete_channel_or_recorder_by_name('channel_blah')
+        assert 'Not Found' in e.value.message
+
+
+    @httpretty.activate
+    def test_delete_channel_or_recorder_by_name_missing_channel(self):
+        resp_data = resp_datafile(
+                'get_sysinfo', 'missing_channel39', ext='json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url,
+                body=resp_data,
+                status=200)
+        response = self.c.delete_channel_or_recorder_by_name('channel_blah')
+        assert response is True
+
+    @httpretty.activate
+    def test_delete_channel_or_recorder_by_name_no_id(self):
+        resp_data = resp_datafile(
+                'get_sysinfo', 'no_id', ext='json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url,
+                body=resp_data,
+                status=200)
+        response = self.c.delete_channel_or_recorder_by_name('channel_blah')
+        assert response is True
+

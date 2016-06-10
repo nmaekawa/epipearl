@@ -53,16 +53,16 @@ class AdminAjax(object):
         r = client.get('ajax/sysinfo.cgi')
         return {
                 'status_code': r.status_code,
-                'response_json': r.json
+                'response_json': r.json()
         }
 
     @classmethod
     def reboot(cls, client):
         r = client.get('admin/reboot.cgi?noaction=yes')
-        if r.status == 200 and 'Rebooting...' in r.text:
+        if r.status_code == 200 and 'Rebooting...' in r.text():
             return {'status_code': 200, 'error_msg': '', 'response': None}
         else:
             # TODO: what kind of errors can happen in this call???
-            return {'status_code': r.status,
+            return {'status_code': r.status_code,
                 'error_msg': 'error rebooting ca', 'response': r}
 

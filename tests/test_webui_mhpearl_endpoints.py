@@ -17,7 +17,7 @@ import requests
 import httpretty
 from sure import expect, should, should_not
 
-from conftest import resp_html_data
+from conftest import resp_datafile
 from epipearl import Epipearl
 from epipearl.endpoints.webui_mhpearl import WebUiMhPearl
 from epipearl.errors import IndiscernibleResponseFromWebUiError
@@ -42,7 +42,7 @@ class TestMhPearl(object):
 
     @httpretty.activate
     def test_set_mhpearl_settings_ok(self):
-        resp_data = resp_html_data('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,
@@ -67,7 +67,7 @@ class TestMhPearl(object):
 
     @httpretty.activate
     def test_set_mhpearl_settings_pwd_didnt_take(self):
-        resp_data = resp_html_data('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,
@@ -95,7 +95,7 @@ class TestMhPearl(object):
 
     @httpretty.activate
     def test_set_mhpearl_settings_backup_didnt_take(self):
-        resp_data = resp_html_data('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,

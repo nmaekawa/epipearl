@@ -16,7 +16,7 @@ import requests
 import httpretty
 from sure import expect, should, should_not
 
-from conftest import resp_html_data
+from conftest import resp_datafile
 from epipearl import Epipearl
 from epipearl.errors import RequestsError
 from epipearl.errors import SettingConfigError
@@ -40,7 +40,7 @@ class TestWebUiConfig(object):
 
     @httpretty.activate
     def test_set_ntp_ok(self):
-        resp_data = resp_html_data('set_date_and_time', 'ok')
+        resp_data = resp_datafile('set_date_and_time', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
@@ -51,7 +51,7 @@ class TestWebUiConfig(object):
 
     @httpretty.activate
     def test_set_ntp_invalid_tz(self):
-        resp_data = resp_html_data('set_date_and_time', 'invalid_tz')
+        resp_data = resp_datafile('set_date_and_time', 'invalid_tz')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
@@ -64,7 +64,7 @@ class TestWebUiConfig(object):
 
     @httpretty.activate
     def test_set_ntp_server_did_not_take(self):
-        resp_data = resp_html_data('set_date_and_time', 'ok')
+        resp_data = resp_datafile('set_date_and_time', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
@@ -76,7 +76,7 @@ class TestWebUiConfig(object):
 
     @httpretty.activate
     def test_set_ntp_server_error(self):
-        resp_data = resp_html_data('set_date_and_time', 'ok')
+        resp_data = resp_datafile('set_date_and_time', 'ok')
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body='does not matter',

@@ -18,6 +18,7 @@ from requests.auth import HTTPBasicAuth
 from urlparse import urljoin
 
 from endpoints.admin import Admin
+from endpoints.admin import AdminAjax
 from endpoints.webui_channel import WebUiChannel
 from endpoints.webui_config import WebUiConfig
 from endpoints.webui_mhpearl import WebUiMhPearl
@@ -26,23 +27,6 @@ from errors import SettingConfigError
 from errors import RequestsError
 
 _default_timeout = 5
-
-
-
-def handle_http_exceptions(callbacks=None):
-    if callbacks is None:
-        callbacks = {}
-    def wrapper(f):
-        def newfunc(*args, **kwargs):
-            try:
-                return f(*args, **kwargs)
-            except Exception:
-                raise
-        return newfunc
-    return wrapper
-
-
-
 
 
 def default_useragent():
@@ -159,7 +143,6 @@ class Epipearl(object):
     # beware that these are design to fit dce config reqs!
     #
 
-    @handle_http_exceptions()
     def set_ntp(self, server, timezone):
         """sets ntp server and timezone in epiphan.
 
@@ -173,7 +156,6 @@ class Epipearl(object):
                 timezone=timezone)
 
 
-    @handle_http_exceptions()
     def set_touchscreen(self, screen_timeout=600):
         """ disables settings changes and recording via touchscreen.
 
@@ -186,7 +168,6 @@ class Epipearl(object):
                 screen_timeout=screen_timeout)
 
 
-    @handle_http_exceptions()
     def set_permanent_logs(self, log_enabled=True):
         """enables/disables permanent logs.
 
@@ -236,7 +217,6 @@ class Epipearl(object):
         return True
 
 
-    @handle_http_exceptions()
     def set_channel_rtmp(self, channel_id,
             rtmp_url, rtmp_stream, rtmp_usr, rtmp_pwd):
         """configs rtmp-push for live streaming in given channel.
@@ -252,7 +232,6 @@ class Epipearl(object):
                 rtmp_pwd=rtpm_pwd)
 
 
-    @handle_http_exceptions()
     def create_recorder(self, recorder_name, channel_list):
         """creates new recorder with given channel_list.
 
@@ -287,7 +266,6 @@ class Epipearl(object):
         return True
 
 
-    @handle_http_exceptions()
     def set_recording_settings(self, recorder_id,
             recording_timelimit_in_minutes=360,        # 6h
             recording_sizelimit_in_kilobytes=64000000, # 64G
@@ -307,7 +285,7 @@ class Epipearl(object):
                 afu_enabled=afu_enabled,
                 upnp_enabled=upnp_enabled)
 
-    @handle_http_exceptions()
+
     def delete_recorder(self, recorder_id):
         """deletes given recorder_id.
         """
@@ -315,7 +293,6 @@ class Epipearl(object):
                 recorder_id=recorder_id)
 
 
-    @handle_http_exceptions()
     def delete_channel(self, channel_id):
         """deletes given channel_id.
         """
@@ -323,7 +300,6 @@ class Epipearl(object):
                 channel_id=channel_id)
 
 
-    @handle_http_exceptions()
     def set_mhpearl_settings(self,
             device_name='',       # device name for mh admin
             device_channel='',    # vod recorder id number
@@ -352,4 +328,53 @@ class Epipearl(object):
                 admin_server_pwd=admin_server_pwd,
                 update_frequency_in_seconds=update_frequency_in_seconds,
                 backup_agent=backup_agent)
+
+
+    def delete_channel_or_recorder_by_name(self, channel_name):
+        """deletes all channels or recorders by given channel name.
+
+        ignores case where there's no id for a matched channel name,
+        or when there are no channels in the returned json and
+        returns success.
+        """
+        # query device for configured channels
+        try:
+            r_sysinfo = AdminAjax.get_sysinfo(client=self)
+        except Exception as e:
+            msg = 'failed to GET sysinfo for device(%s) - %s' % \
+                    (self.url, e.message)
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
+
+        # query returned by was unsuccessful
+        if r_sysinfo['status_code'] != 200:
+            msg = 'error in GET json_sysinfo from device(%s)' % self.url
+            msg += ' - status_code(%s)' % r_sysinfo['status_code']
+            logging.getLogger(__name__).error(msg)
+            raise RequestsError(msg)
+
+        # query returned json object!
+        channel_id = []
+        sysinfo = r_sysinfo['response_json']
+
+        if 'channels' in sysinfo:
+            for c in sysinfo['channels']:
+                if 'name' in c and 'id' in c:      # skip if not enough info
+                    if c['name'] == channel_name:  # but it's not an error...
+                        channel_id.append(c['id'])
+
+        if len(channel_id) == 0:
+            return True  # most definitely no channels with channel-name
+
+        for i in channel_id:
+            try:
+                 WebUiChannel.delete_channel(client=self, channel_id=i)
+            except Exception as e:
+                msg = 'failed to delete channel(%s)(%s) from device(%s) - %s' % \
+                        (channel_id, channel_name, self.url, e.message)
+                logging.getLogger(__name__).error(msg)
+                raise RequestsError(msg)
+
+        return True
+
 
