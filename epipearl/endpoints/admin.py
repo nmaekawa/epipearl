@@ -1,12 +1,6 @@
 # -*- coding: utf-8 -*-
 """http api calls to epiphan pearl."""
 
-from bs4 import BeautifulSoup
-import logging
-import requests
-
-from epipearl.errors import RequestsError
-from epipearl.errors import SettingConfigError
 
 class Admin(object):
     """calls to admin api documented in epiphan user guide.
@@ -32,8 +26,8 @@ class Admin(object):
                 'admin/channel%s/get_params.cgi' % channel,
                 params=params)
         return {
-            'status_code': r.status_code,
-            'response_text': r.text}
+                'status_code': r.status_code,
+                'response_text': r.text}
 
     @classmethod
     def set_params(cls, client, channel, params):
@@ -41,8 +35,8 @@ class Admin(object):
                 'admin/channel%s/set_params.cgi' % channel,
                 params=params)
         return {
-            'status_code': r.status_code,
-            'response_text': ''}
+                'status_code': r.status_code,
+                'response_text': ''}
 
 
 class AdminAjax(object):
@@ -53,8 +47,7 @@ class AdminAjax(object):
         r = client.get('ajax/sysinfo.cgi')
         return {
                 'status_code': r.status_code,
-                'response_json': r.json()
-        }
+                'response_json': r.json()}
 
     @classmethod
     def reboot(cls, client):
@@ -63,6 +56,6 @@ class AdminAjax(object):
             return {'status_code': 200, 'error_msg': '', 'response': None}
         else:
             # TODO: what kind of errors can happen in this call???
-            return {'status_code': r.status_code,
-                'error_msg': 'error rebooting ca', 'response': r}
-
+            return {
+                    'status_code': r.status_code,
+                    'error_msg': 'error rebooting ca', 'response': r}

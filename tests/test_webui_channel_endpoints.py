@@ -18,10 +18,9 @@ import httpretty
 from sure import expect, should, should_not
 
 from conftest import resp_datafile
-from epipearl import Epipearl
+from epipearl.epipearl import Epipearl
 from epipearl.endpoints.webui_channel import WebUiChannel
 from epipearl.errors import IndiscernibleResponseFromWebUiError
-from epipearl.errors import RequestsError
 from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
@@ -71,7 +70,7 @@ class TestChannel(object):
         httpretty.register_uri(httpretty.GET,
                 '%s/admin/add_channel.cgi' % epiphan_url, status=500)
 
-        with pytest.raises(RequestsError) as e:
+        with pytest.raises(requests.HTTPError) as e:
             response = WebUiChannel.create_channel(client=self.c)
         assert '500 Server Error' in e.value.message
 
@@ -129,28 +128,16 @@ class TestChannel(object):
 
 
     @httpretty.activate
-    def test_rename_channel_status404(self):
+    def test_rename_channel_status501(self):
         httpretty.register_uri(httpretty.POST,
                 '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
-                status=404)
+                status=501)
 
-        with pytest.raises(RequestsError) as e:
+        with pytest.raises(requests.HTTPError) as e:
             response = WebUiChannel.rename_channel(
                     client=self.c, channel_id='5',
                     channel_name='new channel name')
-        assert '404 Client Error' in e.value.message
-
-
-    @httpretty.activate
-    def test_rename_channel_status300(self):
-        httpretty.register_uri(httpretty.POST,
-                '%s/admin/ajax/rename_channel.cgi' % epiphan_url,
-                status=300)
-
-        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
-            response = WebUiChannel.rename_channel(
-                    client=self.c, channel_id='5', channel_name='new channel name')
-        assert 'error from call' in e.value.message
+        assert '501 Server Error' in e.value.message
 
 
     @httpretty.activate
@@ -173,24 +160,11 @@ class TestChannel(object):
                 '%s/admin/channel39/layouts/1' % epiphan_url,
                 status=403)
 
-        with pytest.raises(RequestsError) as e:
+        with pytest.raises(requests.HTTPError) as e:
             response = WebUiChannel.set_channel_layout(
                     client=self.c, channel_id='39',
                     layout='{}')
         assert '403 Client Error' in e.value.message
-
-
-    @httpretty.activate
-    def test_set_channel_layout_status302(self):
-        httpretty.register_uri(httpretty.POST,
-                '%s/admin/channel39/layouts/1' % epiphan_url,
-                status=302)
-
-        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
-            response = WebUiChannel.set_channel_layout(
-                    client=self.c, channel_id='39',
-                    layout='{}')
-        assert 'error from call' in e.value.message
 
 
     @httpretty.activate
@@ -314,7 +288,7 @@ class TestChannel(object):
         httpretty.register_uri(httpretty.GET,
                 '%s/admin/add_recorder.cgi' % epiphan_url, status=500)
 
-        with pytest.raises(RequestsError) as e:
+        with pytest.raises(requests.HTTPError) as e:
             response = WebUiChannel.create_recorder(client=self.c)
         assert '500 Server Error' in e.value.message
 

@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 """exception for epipearl cadash."""
 
-class Error(Exception):
+
+class EpipearlError(Exception):
     """base class to all exceptions raised by this module."""
 
 
-class SettingConfigError(Error):
+class SettingConfigError(EpipearlError):
     """error in settings configs, usually benign warnings."""
 
 
-class IndiscernibleResponseFromWebUiError(Error):
+class IndiscernibleResponseFromWebUiError(EpipearlError):
     """unexpected result from epiphan device; call failed"""
-
-
-class RequestsError(Error):
-    """error during connection or 500."""

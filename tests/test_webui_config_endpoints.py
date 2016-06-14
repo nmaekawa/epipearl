@@ -18,7 +18,7 @@ import httpretty
 from sure import expect, should, should_not
 
 from conftest import resp_datafile
-from epipearl import Epipearl
+from epipearl.epipearl import Epipearl
 from epipearl.endpoints.webui_config import WebUiConfig
 from epipearl.errors import SettingConfigError
 
@@ -81,4 +81,30 @@ class TestConfiguration(object):
                     server='north-america.pool.ntp.org',
                     timezone='US/Alaska')
         assert 'protocol setting expected(NTP)' in e.value.message
+
+
+    @httpretty.activate
+    def test_set_source_deinterlacing_ok(self):
+        resp_data = resp_datafile('set_source_deinterlacing', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/sources/D12345678.hdmi-a' % epiphan_url,
+                body=resp_data,
+                status=200)
+
+        response = WebUiConfig.set_source_deinterlacing(
+                client=self.c, source_name='D12345678.hdmi-a')
+        assert response
+
+    @httpretty.activate
+    def test_set_source_deinterlacing_didnot_take(self):
+        resp_data = resp_datafile('set_source_deinterlacing', 'ok')
+        httpretty.register_uri(httpretty.POST,
+                '%s/admin/sources/D12345678.hdmi-a' % epiphan_url,
+                body=resp_data,
+                status=200)
+
+        with pytest.raises(SettingConfigError) as e:
+            response = WebUiConfig.set_source_deinterlacing(
+                    client=self.c, source_name='D12345678.hdmi-a', enabled=False)
+        assert 'deinterlacing expected to be OFF' in e.value.message
 

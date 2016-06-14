@@ -39,7 +39,7 @@ test_requirements = [
 
 setup(
     name='epipearl',
-    version='0.1.0',
+    version=version,
     description="python client for epiphan-pearl http api",
     long_description=readme + '\n\n' + history,
     author="nmaekawa",

@@ -3,10 +3,8 @@
 
 from bs4 import BeautifulSoup
 import logging
-import requests
-import re
 
-from epipearl.errors import RequestsError
+from epipearl.errors import IndiscernibleResponseFromWebUiError
 from epipearl.errors import SettingConfigError
 
 
@@ -65,20 +63,25 @@ class WebUiConfig(object):
 
     @classmethod
     def set_ntp(cls, client, server, timezone):
-        params = {'server': server, 'tz': timezone,
+        params = {
+                'server': server, 'tz': timezone,
                 'fn': 'date', 'rdate': 'auto', 'rdate_proto': 'NTP'}
 
         check_success = [
-                {'emsg': 'timezone setting expected(%s)' % timezone,
+                {
+                    'emsg': 'timezone setting expected(%s)' % timezone,
                     'func': cls.check_singlevalue_select_funcfactory(
                         value=timezone)},
-                {'emsg': 'protocol setting expected(NTP)',
+                {
+                    'emsg': 'protocol setting expected(NTP)',
                     'func': cls.check_singlevalue_select_funcfactory(
                         value='NTP')},
-                {'emsg': 'expected to enable sync(auto)',
+                {
+                    'emsg': 'expected to enable sync(auto)',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='rdate_auto')},
-                {'emsg': 'expected ntp server(%s)' % server,
+                {
+                    'emsg': 'expected ntp server(%s)' % server,
                     'func': cls.check_input_id_value_funcfactory(
                         tag_id='server', value=server)}]
         return cls.configuration(
@@ -90,31 +93,40 @@ class WebUiConfig(object):
 
     @classmethod
     def set_touchscreen(cls, client, screen_timeout=600):
-        params = {'pdf_form_id': 'fn_episcreen',
+        params = {
+                'pdf_form_id': 'fn_episcreen',
                 'epiScreenEnabled': 'on',
                 'epiScreenTimeout': screen_timeout,
                 'showVideo': 'on',
                 'showInfo': 'on'}
 
         check_success = [
-                {'emsg': 'epiScreenEnabled ON expected',
+                {
+                    'emsg': 'epiScreenEnabled ON expected',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='epiScreenEnabled')},
-                {'emsg': 'epiScreenTimeout expected(%s)' % screen_timeout,
+                {
+                    'emsg': 'epiScreenTimeout expected(%s)' % screen_timeout,
                     'func': cls.check_input_id_value_funcfactory(
                         tag_id='epiScreenTimeout', value=screen_timeout)},
-                {'emsg': 'showPreview ON expected',
+                {
+                    'emsg': 'showPreview ON expected',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='showVideo')},
-                {'emsg': 'showSystemStatus ON expected',
+                {
+                    'emsg': 'showSystemStatus ON expected',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='showInfo')},
-                {'emsg': 'changeSettings OFF expected',
-                    'func': cls.check_singlevalue_checkbox_disabled_funcfactory(
-                        tag_id='changeSettings')},
-                {'emsg': 'recordControl OFF expected',
-                    'func': cls.check_singlevalue_checkbox_disabled_funcfactory(
-                        tag_id='recordControl')} ]
+                {
+                    'emsg': 'changeSettings OFF expected',
+                    'func':
+                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                            tag_id='changeSettings')},
+                {
+                    'emsg': 'recordControl OFF expected',
+                    'func':
+                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                            tag_id='recordControl')}]
 
         return cls.configuration(
                 client=client,
@@ -127,38 +139,47 @@ class WebUiConfig(object):
         _default_server = 'epiphany.epiphan.com'
         _default_port = '30'
 
-        params = {'enablessh': 'on',
+        params = {
+                'enablessh': 'on',
                 'tunnel': 'on',
                 'tunnelsrv': _default_server,
                 'tunnelport': _default_port}
 
         check_success = [
-                {'emsg': 'remote_support ON expected',
+                {
+                    'emsg': 'remote_support ON expected',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='enabledssh')},
-                {'emsg': 'server_connection ON expected',
+                {
+                    'emsg': 'server_connection ON expected',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='tunnel')},
-                {'emsg': 'server_address expected(%s)' % _default_server,
+                {
+                    'emsg': 'server_address expected(%s)' % _default_server,
                     'func': cls.check_input_id_value_funcfactory(
                         tag_id='tunnelsrv', value=_default_server)},
-                {'emsg': 'server_port expected(%s)' % _default_port,
+                {
+                    'emsg': 'server_port expected(%s)' % _default_port,
                     'func': cls.check_input_id_value_funcfactory(
                         tag_id='tunnelport', value=_default_port)}]
 
         if log_enabled:
-            params['permanent_logs']= 'on'
+            params['permanent_logs'] = 'on'
             check_success.append(
-                {'emsg': 'permanent logs expected to be ON',
+                {
+                    'emsg': 'permanent logs expected to be ON',
                     'func': cls.check_singlevalue_checkbox_funcfactory(
                         tag_id='permanent_logs')})
         else:
+            params['permanent_logs'] = ' '
             check_success.append(
-                {'emsg': 'permanent logs expected to be OFF',
-                    'func': cls.check_singlevalue_checkbox_disabled_funcfactory(
-                        tag_id='permanent_logs')})
+                {
+                    'emsg': 'permanent logs expected to be OFF',
+                    'func':
+                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                            tag_id='permanent_logs')})
 
-        return  cls.configuration(
+        return cls.configuration(
                 client=client,
                 path='admin/maintenancetfg',
                 params=params,
@@ -171,12 +192,40 @@ class WebUiConfig(object):
 
     @classmethod
     def set_afu(cls, client):
-        raise NotImplementedError('set_automatic_file_upload() not implemented yet.')
+        raise NotImplementedError(
+                'set_automatic_file_upload() not implemented yet.')
 
     @classmethod
     def set_upnp(cls, client):
         raise NotImplementedError(
                 'set_universal_plug_and_play() not implemented yet.')
+
+    @classmethod
+    def set_source_deinterlacing(cls, client, source_name, enabled=True):
+        params = {'pfd_form_id': 'vsource'}
+        check_success = []
+
+        if enabled:
+            params['deinterlacing'] = 'on'
+            check_success.append(
+                {
+                    'emsg': 'deinterlacing expected to be ON',
+                    'func': cls.check_singlevalue_checkbox_funcfactory(
+                        tag_id='deinterlacing')})
+        else:
+            params['deinterlacing'] = ' '
+            check_success.append(
+                {
+                    'emsg': 'deinterlacing expected to be OFF',
+                    'func':
+                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                            tag_id='deinterlacing')})
+
+        return cls.configuration(
+                client=client,
+                path='admin/sources/%s' % source_name,
+                params=params,
+                check_success=check_success)
 
 
     @classmethod
@@ -190,42 +239,33 @@ class WebUiConfig(object):
             [{ 'func': <function for BeautifulSoup.find>
                'emsg': string error msg if func returns false }]
         """
-        try:
-            r = client.post(path, data=params)
-        except (requests.HTTPError,
-                requests.RequestException,
-                requests.ConnectionError,
-                requests.Timeout) as e:
-            msg = 'failed to call %s/%s - %s' % (client.url, path, e.message)
-            logging.getLogger(__name__).error(msg)
-            raise RequestsError(msg)
-        else:
-            msg = 'error from call %s/%s ' % (client.url, path)
-            logger = logging.getLogger(__name__)
-            # still have to check errors in response html
-            if r.status_code == 200:
-                soup = BeautifulSoup(r.text, 'html.parser')
-                emsg = cls._scrape_error(soup)
-                if len(emsg) > 0:     # concat error messages
-                    allmsgs = [x['msg'] for x in emsg if 'msg' in x]
-                    msg += '\n'.join(allmsgs)
-                    logger.error(msg)
-                    raise SettingConfigError(msg)
-                else:
-                    # no error msg, check that updates took place
-                    for c in check_success:
-                        tags = soup.find_all(c['func'])
-                        if not tags:
-                            msg += '- %s' % c['emsg']
-                            logger.error(msg)
-                            raise SettingConfigError(msg)
-                # all is well
-                return True
+        r = client.post(path, data=params)
+        msg = 'error from call %s/%s ' % (client.url, path)
+        logger = logging.getLogger(__name__)
+        # still have to check errors in response html
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.text, 'html.parser')
+            emsg = cls._scrape_error(soup)
+            if len(emsg) > 0:     # concat error messages
+                allmsgs = [x['msg'] for x in emsg if 'msg' in x]
+                msg += '\n'.join(allmsgs)
+                logger.error(msg)
+                raise SettingConfigError(msg)
+            else:
+                # no error msg, check that updates took place
+                for c in check_success:
+                    tags = soup.find_all(c['func'])
+                    if not tags:
+                        msg += '- %s' % c['emsg']
+                        logger.error(msg)
+                        raise SettingConfigError(msg)
+            # all is well
+            return True
 
-            msg = 'error in call %s/%s - response status(%s)' % \
-                    (client.url, path, r.status_code)
-            logging.getLogger(__name__).error(msg)
-            raise IndiscernibleResponseFromWebUiError(msg)
+        msg = 'error in call %s/%s - response status(%s)' % (
+                client.url, path, r.status_code)
+        logging.getLogger(__name__).error(msg)
+        raise IndiscernibleResponseFromWebUiError(msg)
 
 
     @classmethod
@@ -243,7 +283,8 @@ class WebUiConfig(object):
         """navigate div to find msg text and error code."""
         resp = []
         if len(mtag) > 0:
-            dtag = mtag[0].findChildren('div',
+            dtag = mtag[0].findChildren(
+                    'div',
                     class_='wui-message-banner-inner')
             for d in dtag:
                 lines = d.strings
@@ -258,7 +299,7 @@ class WebUiConfig(object):
                 except Exception as e:
                     msg = 'could not scrape epiphan webui response: %s' \
                             % e.message
-                    logger = logging.getLogger(__name__).error(msg)
+                    logging.getLogger(__name__).error(msg)
                     resp.append({
                         'cat': 'error',
                         'msg': msg,

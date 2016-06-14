@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 """http api and web ui calls to epiphan pearl."""
 
-from bs4 import BeautifulSoup
-import json
-import logging
-import requests
-import re
-
-from epipearl.errors import IndiscernibleResponseFromWebUiError
-from epipearl.errors import RequestsError
-from epipearl.errors import SettingConfigError
 from epipearl.endpoints.webui_config import WebUiConfig
 
 
@@ -23,44 +14,61 @@ class WebUiMhPearl(object):
     """
 
     @classmethod
-    def set_mhpearl_settings(cls, client,
+    def set_mhpearl_settings(
+            cls, client,
             device_name='',       # device name for mh admin
             device_channel='',    # vod recorder id number
-            file_search_range_in_seconds='', # range within to locate a recording
+            file_search_range_in_seconds='',    # range within which it must
+                                                # locate a recording
             admin_server_url='',  # mh admin url
             admin_server_usr='',  # mh digest user
             admin_server_pwd='',  # mh digest pwd
-            update_frequency_in_seconds='120',  # frequency to poll for schedule
-            backup_agent=False):  # if True, does not upload recording to mh when done
+            update_frequency_in_seconds='120',  # freq to poll for schedule
+            backup_agent=False):    # if True, does not upload recording to
+                                    # mh when done
 
         check_success = [
-                {'emsg': 'device_name expected(%s)' % device_name,
+                {
+                    'emsg': 'device_name expected(%s)' % device_name,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='ca_name', value=device_name)},
-                {'emsg': 'device_username expected(%s)' % client.user,
+                {
+                    'emsg': 'device_username expected(%s)' % client.user,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='ca_user', value=client.user)},
-                {'emsg': 'not the device_password expected',
+                {
+                    'emsg': 'not the device_password expected',
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='ca_pass', value=client.passwd)},
-                {'emsg': 'device_channel expected(%s)' % device_channel,
+                {
+                    'emsg': 'device_channel expected(%s)' % device_channel,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='ca_chan', value=device_channel)},
-                {'emsg': 'file_search_range expected(%s)' % file_search_range_in_seconds,
+                {
+                    'emsg': 'file_search_range expected(%s)' %
+                            file_search_range_in_seconds,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
-                        tag_id='ca_range', value=str(file_search_range_in_seconds))},
-                {'emsg': 'admin_server_url expected(%s)' % admin_server_url,
+                        tag_id='ca_range',
+                        value=str(file_search_range_in_seconds))},
+                {
+                    'emsg': 'admin_server_url expected(%s)' % admin_server_url,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='mh_host', value=admin_server_url)},
-                {'emsg': 'admin_server_user expected(%s)' % admin_server_usr,
+                {
+                    'emsg': 'admin_server_user expected(%s)' %
+                            admin_server_usr,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='mh_user', value=admin_server_usr)},
-                {'emsg': 'not the admin_server_passwd expected',
+                {
+                    'emsg': 'not the admin_server_passwd expected',
                     'func': WebUiConfig.check_input_id_value_funcfactory(
                         tag_id='mh_pass', value=admin_server_pwd)},
-                {'emsg': 'update_frequency expected(%s)' % update_frequency_in_seconds,
+                {
+                    'emsg': 'update_frequency expected(%s)' %
+                            update_frequency_in_seconds,
                     'func': WebUiConfig.check_input_id_value_funcfactory(
-                        tag_id='mh_freq', value=str(update_frequency_in_seconds))} ]
+                        tag_id='mh_freq',
+                        value=str(update_frequency_in_seconds))}]
 
         params = {
                 'DEVICE_NAME': device_name,
@@ -82,8 +90,9 @@ class WebUiMhPearl(object):
         else:
             check_success.append({
                 'emsg': 'backup_agent expected("ON")',
-                'func': WebUiConfig.check_singlevalue_checkbox_disabled_funcfactory(
-                    tag_id='mh_backup')})
+                'func': WebUiConfig.
+                        check_singlevalue_checkbox_disabled_funcfactory(
+                            tag_id='mh_backup')})
 
         path = '/admin/mhcfg'
         return WebUiConfig.configuration(
@@ -91,4 +100,3 @@ class WebUiMhPearl(object):
                 params=params,
                 path=path,
                 check_success=check_success)
-

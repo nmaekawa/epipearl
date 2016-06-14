@@ -17,8 +17,7 @@ import httpretty
 from sure import expect, should, should_not
 
 from conftest import resp_datafile
-from epipearl import Epipearl
-from epipearl.errors import RequestsError
+from epipearl.epipearl import Epipearl
 from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
@@ -82,7 +81,7 @@ class TestWebUiConfig(object):
                 body='does not matter',
                 status=501)
 
-        with pytest.raises(RequestsError) as e:
+        with pytest.raises(requests.HTTPError) as e:
             response = self.c.set_ntp(server='google.com', timezone='US/Alaska')
         assert 'Server Error' in e.value.message
 
