@@ -162,12 +162,12 @@ class Epipearl(object):
 
     def set_permanent_logs(self, log_enabled=True):
         """enables/disables permanent logs."""
-        return WebUiConfig.set_support_and_permanent_logs(
+        return WebUiConfig.set_remote_support_and_permanent_logs(
                 client=self,
                 log_enabled=log_enabled)
 
 
-    def set_deinterlacing_sources(self, source_name, deinterlacing=True):
+    def set_deinterlacing_source(self, source_name, deinterlacing=True):
         """deinterlacing on/off for given video source."""
         return WebUiConfig.set_source_deinterlacing(
                 client=self, source_name=source_name, enabled=deinterlacing)
@@ -198,6 +198,10 @@ class Epipearl(object):
 
 
     def set_channel_layout(self, channel_id, layout, layout_id='1'):
+        """set source layout for channel.
+
+        layout must be a json string.
+        """
         return WebUiChannel.set_channel_layout(
                 client=self,
                 channel_id=channel_id,
@@ -213,7 +217,7 @@ class Epipearl(object):
                 channel_id=channel_id,
                 rtmp_url=rtmp_url,
                 rtmp_stream=rtmp_stream,
-                rtpm_usr=rtmp_usr,
+                rtmp_usr=rtmp_usr,
                 rtmp_pwd=rtmp_pwd)
 
 
@@ -254,7 +258,7 @@ class Epipearl(object):
             output_format='avi',  # or mov, mp4, ts(mpeg-ts)
             user_prefix='',       # prefix for recording file
             afu_enabled='on',     # this means auto-upload disabled!
-            upnp_enabled=None):
+            upnp_enabled=''):
         """configs settings for give recorder_id."""
         return WebUiChannel.set_recorder_settings(
                 client=self,
@@ -308,6 +312,25 @@ class Epipearl(object):
                 backup_agent=backup_agent)
 
 
+    def get_sysinfo(self):
+        # query device for configured channels
+        try:
+            r_sysinfo = AdminAjax.get_sysinfo(client=self)
+        except Exception as e:
+            msg = 'failed to GET sysinfo for device(%s) - %s' % (self.url, e.message)
+            logging.getLogger(__name__).error(msg)
+            raise e
+
+        # query returned json object!
+        if r_sysinfo['status_code'] != 200:
+            msg = 'failed to parse response from device(%s) - status_code(%s)'\
+                    % (self.url, r_sysinfo['status_code'])
+            logging.getLogger(__name__).error(msg)
+            raise IndiscernibleResponseFromWebUiError(msg)
+
+        return r_sysinfo['response_json']
+
+
     def delete_channel_or_recorder_by_name(self, channel_name, sysinfo=None):
         """deletes all channels or recorders by given channel name.
 
@@ -317,34 +340,42 @@ class Epipearl(object):
         if sysinfo is None:
             # query device for configured channels
             try:
-                r_sysinfo = AdminAjax.get_sysinfo(client=self)
+                sysinfo = self.get_sysinfo()
             except Exception as e:
                 msg = 'failed to delete channel/recorder(%s); ' % channel_name
                 msg += 'GET sysinfo for device(%s) - %s' % (self.url, e.message)
                 logging.getLogger(__name__).error(msg)
                 raise e
 
-            # query returned json object!
-            sysinfo = r_sysinfo['response_json']
-
-
         channel_id = []
         if 'channels' in sysinfo:
             for c in sysinfo['channels']:
                 if 'name' in c and 'id' in c:      # skip if not enough info
-                    if c['name'] == channel_name:  # but it's not an error...
+                    if c['name'].strip() == channel_name:  # but not an error...
                         channel_id.append(c['id'])
 
         if len(channel_id) == 0:
             return True  # most definitely no channels with channel-name
 
         for i in channel_id:
-            try:
-                WebUiChannel.delete_channel(client=self, channel_id=i)
-            except Exception as e:
-                msg = 'failed to delete channel(%s)(%s) from device(%s) - %s' \
-                        % (channel_id, channel_name, self.url, e.message)
-                logging.getLogger(__name__).error(msg)
-                raise e
+            if i.startswith('m'):
+                try:
+                    WebUiChannel.delete_recorder(
+                            client=self, recorder_id=i[1:])
+                except Exception as e:
+                    msg = 'failed to delete recordern(%s)(%s) from device(%s'\
+                            % (i, channel_name, self.url)
+                    msg += ') - %s' % e.message
+                    logging.getLogger(__name__).error(msg)
+                    raise e
+            else:
+                try:
+                    WebUiChannel.delete_channel(client=self, channel_id=i)
+                except Exception as e:
+                    msg = 'failed to delete channel(%s)(%s) from device(%s)'\
+                            % (i, channel_name, self.url)
+                    msg += ' - %s' % e.message
+                    logging.getLogger(__name__).error(msg)
+                    raise e
 
         return True

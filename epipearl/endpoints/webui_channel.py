@@ -95,9 +95,15 @@ class WebUiChannel(object):
 
     @classmethod
     def set_channel_layout(cls, client, channel_id, layout, layout_id='1'):
-        """returns the json layout set."""
+        """returns the json layout set.
+
+        layout must be a json string
+        """
         path = '/admin/channel%s/layouts/%s' % (channel_id, layout_id)
-        r = client.post(path=path, data=json.dumps(layout))
+        extra_headers = {'Content-Type': 'application/json; charset=UTF-8'}
+
+        r = client.post(
+                path=path, data=(layout), extra_headers=extra_headers)
         return r.text
 
 
@@ -118,19 +124,19 @@ class WebUiChannel(object):
         check_success = [
                 {
                     'emsg': 'rtmp_usr expected(%s)' % rtmp_usr,
-                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                    'func': WebUiConfig.check_input_id_value(
                         tag_id='rtmp_username', value=rtmp_usr)},
                 {
                     'emsg': 'rtmp_url expected(%s)' % rtmp_url,
-                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                    'func': WebUiConfig.check_input_id_value(
                         tag_id='rtmp_url', value=rtmp_url)},
                 {
                     'emsg': 'rtmp_stream expected(%s)' % rtmp_stream,
-                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                    'func': WebUiConfig.check_input_id_value(
                         tag_id='rtmp_stream', value=rtmp_stream)},
                 {
                     'emsg': 'not the rtmp_pwd expected',
-                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                    'func': WebUiConfig.check_input_id_value(
                         tag_id='rtmp_password', value=rtmp_pwd)}]
 
         return WebUiConfig.configuration(
@@ -203,7 +209,7 @@ class WebUiChannel(object):
             check_success.append({
                 'emsg': 'channel(%s) missing for recorder(%s) config' %
                         (i, recorder_id),
-                'func': WebUiConfig.check_multivalue_select_funcfactory(
+                'func': WebUiConfig.check_multivalue_select(
                     name='rc[]', value=i)})
 
         channel_list_param = [('rc[]', x) for x in channel_list]
@@ -226,7 +232,7 @@ class WebUiChannel(object):
             output_format='avi',  # or mov, mp4, ts(mpeg-ts)
             user_prefix='',       # prefix for recording file
             afu_enabled='on',     # this means auto-upload disabled!
-            upnp_enabled=None):
+            upnp_enabled=''):
 
         #
         # 06jun16 naomi: upnp and afu(automatic file upload) have dependencies
@@ -243,21 +249,49 @@ class WebUiChannel(object):
         check_success = [
                 {
                     'emsg': 'timelimit expected(%s)' % timelimit,
-                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                    'func': WebUiConfig.check_singlevalue_select(
                         value=timelimit)},
                 {
                     'emsg': 'sizelimit expected(%s)' %
                             recording_sizelimit_in_kbytes,
-                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                    'func': WebUiConfig.check_singlevalue_select(
                         value=str(recording_sizelimit_in_kbytes))},
                 {
                     'emsg': 'output_format expected(%s)' % output_format,
-                    'func': WebUiConfig.check_singlevalue_select_funcfactory(
+                    'func': WebUiConfig.check_singlevalue_select(
                         value=output_format)},
                 {
                     'emsg': 'user_prefix expected(%s)' % user_prefix,
-                    'func': WebUiConfig.check_input_id_value_funcfactory(
+                    'func': WebUiConfig.check_input_id_value(
                         tag_id='user_prefix', value=user_prefix)}]
+        if afu_enabled == 'on':
+            check_success.append(
+                {
+                    'emsg': 'auto file upload expected(OFF)',
+                    'func': WebUiConfig.\
+                            check_singlevalue_checkbox_disabled(
+                                tag_id='afu_enabled')})
+        else:
+            check_success.append(
+                {
+                    'emsg': 'auto file upload expected(ON)',
+                    'func': WebUiConfig.\
+                            check_singlevalue_checkbox(
+                                tag_id='afu_enabled')})
+        if upnp_enabled == 'on':
+            check_success.append(
+                {
+                    'emsg': 'share via UPnP expected(ON)',
+                    'func': WebUiConfig.\
+                            check_singlevalue_checkbox(
+                                tag_id='upnp_enabled')})
+        else:
+            check_success.append(
+                {
+                    'emsg': 'share via UPnP expected(OFF)',
+                    'func': WebUiConfig.\
+                            check_singlevalue_checkbox_disabled(
+                                tag_id='upnp_enabled')})
         params = {
                 'pfd_form_id': 'rec_settings',
                 'timelimit': timelimit,
@@ -267,6 +301,9 @@ class WebUiChannel(object):
                 'afu_enabled': afu_enabled,
                 'upnp_enabled': upnp_enabled}
         path = '/admin/recorder%s/archive' % recorder_id
+
+
+        assert upnp_enabled == ''
 
         return WebUiConfig.configuration(
                 client=client,

@@ -11,11 +11,13 @@ Tests for `epipearl` module.
 import os
 os.environ['TESTING'] = 'True'
 
+import json
 import pytest
 import requests
 import httpretty
 from sure import expect, should, should_not
 
+from conftest import resp_datafile
 from epipearl.epipearl import Epipearl
 
 epiphan_url = "http://fake.example.edu"
@@ -92,22 +94,87 @@ vendor = Epiphan Systems Inc."""
         assert response
 
 
+    @httpretty.activate
+    def test_get_sysinfo_ok(self):
+        resp_data = resp_datafile('get_sysinfo', 'ok', 'json')
+        httpretty.register_uri(httpretty.GET,
+                '%s/ajax/sysinfo.cgi' % epiphan_url, body=resp_data, status=200)
+
+        response = self.c.get_sysinfo()
+        assert response == json.loads(resp_data)
+
+
     @livetest
     def test_actual_set_params( self ):
         channel = '1'
         ca_url = os.environ['EPI_URL']
-        epi = Epipearl( ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+        epi = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'])
 
-        response = epi.set_params( channel=channel, params={ 'publish_type': os.environ['EPI_PUBLISH_TYPE'] } )
+        response = epi.set_params(
+                channel=channel,
+                params={ 'publish_type': os.environ['EPI_PUBLISH_TYPE']})
         response.should.be.ok
 
     @livetest
     def test_actual_get_params( self ):
         channel = '1'
-        ca_url = "http://dev-epiphan002.dce.harvard.edu"
-        epi = Epipearl( ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+        ca_url = os.environ['EPI_URL']
+        epi = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'])
 
-        response = epi.get_params( channel=channel, params={
-            'publish_type':'' } )
+        response = epi.get_params(
+                channel=channel, params={'publish_type':''})
 
-        response['publish_type'].should_not.be.different_of( os.environ['EPI_PUBLISH_TYPE'] )
+        response['publish_type'].should_not.be.different_of(
+                os.environ['EPI_PUBLISH_TYPE'])
+
+
+    @livetest
+    def test_live_set_channel_layout(self):
+        channel_id = '1'
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.sdi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.analog-b"}}],"background":"#000000","nosignal":{"id":"default"}}'
+
+
+        layout='''{
+            "video":[
+                {
+                    "type": "source",
+                    "position": {
+                        "left":"0%",
+                        "top":"0%",
+                        "width":"100%",
+                        "height":"100%",
+                        "keep_aspect_ratio":true
+                    },
+                    "settings": {
+                        "source":"D2P280762.sdi-b"
+                    }
+                }
+            ],
+            "audio":[
+                {
+                    "type": "source",
+                    "settings": {
+                        "source":"D2P280762.analog-b"
+                    }
+                }
+            ],
+            "background": "#000000",
+            "nosignal":
+                {
+                    "id":"default"
+                }
+}'''
+
+        ca_url = os.environ['EPI_URL']
+        epi = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+
+        for channel_id in ['1', '2', '3', '4']:
+            response = epi.set_channel_layout(
+                    channel_id=channel_id,
+                    layout=layout, layout_id='1')
+
+            assert response is not None
+            r = json.loads(response)
+            assert r['result']['settings'] == json.loads(layout)
+
+

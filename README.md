@@ -13,8 +13,8 @@ install
 
 
 
-example usage
--------------
+example usage to get and set channels parameters
+------------------------------------------------
 
     from epipearl import Epipearl
     client = Epipearl( "http://epiphan_pearl_address", "admin", "secret_password" )
@@ -28,6 +28,8 @@ example usage
     response = client.set_params( channel='m2', params={'rec_enabled': 'on'})
     if response:
         print "recorder 2 set to start recording"
+
+
 
 
 

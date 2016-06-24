@@ -21,7 +21,7 @@ class WebUiConfig(object):
     """
 
     @classmethod
-    def check_singlevalue_checkbox_funcfactory(cls, tag_id):
+    def check_singlevalue_checkbox(cls, tag_id):
         def f(tag):
             return tag.has_attr('id') and \
                     tag['id'] == tag_id and \
@@ -29,7 +29,7 @@ class WebUiConfig(object):
         return f
 
     @classmethod
-    def check_singlevalue_checkbox_disabled_funcfactory(cls, tag_id):
+    def check_singlevalue_checkbox_disabled(cls, tag_id):
         def f(tag):
             return tag.has_attr('id') and \
                     tag['id'] == tag_id and \
@@ -37,7 +37,7 @@ class WebUiConfig(object):
         return f
 
     @classmethod
-    def check_singlevalue_select_funcfactory(cls, value):
+    def check_singlevalue_select(cls, value):
         def f(tag):
             return tag.has_attr('selected') and \
                     tag.has_attr('value') and \
@@ -45,7 +45,7 @@ class WebUiConfig(object):
         return f
 
     @classmethod
-    def check_multivalue_select_funcfactory(cls, name, value):
+    def check_multivalue_select(cls, name, value):
         def f(tag):
             return tag.has_attr('checked') and \
                     tag.has_attr('name') and \
@@ -54,35 +54,37 @@ class WebUiConfig(object):
         return f
 
     @classmethod
-    def check_input_id_value_funcfactory(cls, tag_id, value):
+    def check_input_id_value(cls, tag_id, value):
         def f(tag):
             return tag.has_attr('id') and \
                     tag['id'] == tag_id and \
                     tag['value'] == value
         return f
 
+
     @classmethod
     def set_ntp(cls, client, server, timezone):
         params = {
                 'server': server, 'tz': timezone,
-                'fn': 'date', 'rdate': 'auto', 'rdate_proto': 'NTP'}
+                'fn': 'date', 'rdate': 'auto', 'rdate_proto': 'NTP',
+                'rdate_secs': '900', 'ptp_domain': '_DFLT'}
 
         check_success = [
                 {
                     'emsg': 'timezone setting expected(%s)' % timezone,
-                    'func': cls.check_singlevalue_select_funcfactory(
+                    'func': cls.check_singlevalue_select(
                         value=timezone)},
                 {
                     'emsg': 'protocol setting expected(NTP)',
-                    'func': cls.check_singlevalue_select_funcfactory(
+                    'func': cls.check_singlevalue_select(
                         value='NTP')},
                 {
                     'emsg': 'expected to enable sync(auto)',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
+                    'func': cls.check_singlevalue_checkbox(
                         tag_id='rdate_auto')},
                 {
                     'emsg': 'expected ntp server(%s)' % server,
-                    'func': cls.check_input_id_value_funcfactory(
+                    'func': cls.check_input_id_value(
                         tag_id='server', value=server)}]
         return cls.configuration(
                 client=client,
@@ -95,38 +97,40 @@ class WebUiConfig(object):
     def set_touchscreen(cls, client, screen_timeout=600):
         params = {
                 'pdf_form_id': 'fn_episcreen',
-                'epiScreenEnabled': 'on',
                 'epiScreenTimeout': screen_timeout,
+                'changeSettings': 'on',
+                'recordControl': '',
                 'showVideo': 'on',
+                'epiScreenEnable': 'on',
                 'showInfo': 'on'}
 
         check_success = [
                 {
-                    'emsg': 'epiScreenEnabled ON expected',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
-                        tag_id='epiScreenEnabled')},
-                {
-                    'emsg': 'epiScreenTimeout expected(%s)' % screen_timeout,
-                    'func': cls.check_input_id_value_funcfactory(
-                        tag_id='epiScreenTimeout', value=screen_timeout)},
+                    'emsg': 'epiScreenEnable ON expected',
+                    'func': cls.check_singlevalue_checkbox(
+                        tag_id='epiScreenEnable')},
                 {
                     'emsg': 'showPreview ON expected',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
+                    'func': cls.check_singlevalue_checkbox(
                         tag_id='showVideo')},
                 {
                     'emsg': 'showSystemStatus ON expected',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
+                    'func': cls.check_singlevalue_checkbox(
                         tag_id='showInfo')},
                 {
-                    'emsg': 'changeSettings OFF expected',
+                    'emsg': 'changeSettings ON expected',
                     'func':
-                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                        cls.check_singlevalue_checkbox(
                             tag_id='changeSettings')},
                 {
                     'emsg': 'recordControl OFF expected',
                     'func':
-                        cls.check_singlevalue_checkbox_disabled_funcfactory(
-                            tag_id='recordControl')}]
+                        cls.check_singlevalue_checkbox_disabled(
+                            tag_id='recordControl')},
+                {
+                    'emsg': 'epiScreenTimeout expected(%s)' % screen_timeout,
+                    'func': cls.check_input_id_value(
+                        tag_id='epiScreenTimeout', value=str(screen_timeout))}]
 
         return cls.configuration(
                 client=client,
@@ -140,48 +144,26 @@ class WebUiConfig(object):
         _default_port = '30'
 
         params = {
+                'fn': 'maint',
                 'enablessh': 'on',
                 'tunnel': 'on',
                 'tunnelsrv': _default_server,
                 'tunnelport': _default_port}
 
         check_success = [
-                {
-                    'emsg': 'remote_support ON expected',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
-                        tag_id='enabledssh')},
-                {
-                    'emsg': 'server_connection ON expected',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
-                        tag_id='tunnel')},
-                {
-                    'emsg': 'server_address expected(%s)' % _default_server,
-                    'func': cls.check_input_id_value_funcfactory(
-                        tag_id='tunnelsrv', value=_default_server)},
-                {
-                    'emsg': 'server_port expected(%s)' % _default_port,
-                    'func': cls.check_input_id_value_funcfactory(
-                        tag_id='tunnelport', value=_default_port)}]
+                # TODO: figure how to check for success
+                # remotesupport.cgi does not respond the same html form,
+                # sends a META HTTP-EQUIV with redirection instead...
+                ]
 
         if log_enabled:
             params['permanent_logs'] = 'on'
-            check_success.append(
-                {
-                    'emsg': 'permanent logs expected to be ON',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
-                        tag_id='permanent_logs')})
         else:
-            params['permanent_logs'] = ' '
-            check_success.append(
-                {
-                    'emsg': 'permanent logs expected to be OFF',
-                    'func':
-                        cls.check_singlevalue_checkbox_disabled_funcfactory(
-                            tag_id='permanent_logs')})
+            params['permanent_logs'] = ''
 
         return cls.configuration(
                 client=client,
-                path='admin/maintenancetfg',
+                path='admin/remotesupport.cgi',
                 params=params,
                 check_success=check_success)
 
@@ -210,7 +192,7 @@ class WebUiConfig(object):
             check_success.append(
                 {
                     'emsg': 'deinterlacing expected to be ON',
-                    'func': cls.check_singlevalue_checkbox_funcfactory(
+                    'func': cls.check_singlevalue_checkbox(
                         tag_id='deinterlacing')})
         else:
             params['deinterlacing'] = ' '
@@ -218,7 +200,7 @@ class WebUiConfig(object):
                 {
                     'emsg': 'deinterlacing expected to be OFF',
                     'func':
-                        cls.check_singlevalue_checkbox_disabled_funcfactory(
+                        cls.check_singlevalue_checkbox_disabled(
                             tag_id='deinterlacing')})
 
         return cls.configuration(
@@ -239,7 +221,11 @@ class WebUiConfig(object):
             [{ 'func': <function for BeautifulSoup.find>
                'emsg': string error msg if func returns false }]
         """
-        r = client.post(path, data=params)
+        r = client.post(
+                path, data=params,
+                extra_headers={
+                    'Content-Type': 'application/x-www-form-urlencoded'})
+
         msg = 'error from call %s/%s ' % (client.url, path)
         logger = logging.getLogger(__name__)
         # still have to check errors in response html

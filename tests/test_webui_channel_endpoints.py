@@ -12,6 +12,9 @@ Tests for `epipearl` channel ui endpoints
 import os
 os.environ['TESTING'] = 'True'
 
+import logging
+import sys
+import json
 import pytest
 import requests
 import httpretty
@@ -38,6 +41,7 @@ livetest = pytest.mark.skipif(
 class TestChannel(object):
 
     def setup_method(self, method):
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
         self.c = Epipearl(epiphan_url, epiphan_user, epiphan_passwd)
 
     @httpretty.activate
@@ -412,5 +416,22 @@ class TestChannel(object):
                     recorder_id=3,
                     output_format='avi')
         assert 'output_format expected(avi)' in e.value.message
+
+    @livetest
+    def test_live_set_channel_layout(self):
+        layout='{"video":[{"type":"source","position":{"left":"0%","top":"0%","width":"100%","height":"100%","keep_aspect_ratio":true},"settings":{"source":"D2P280762.sdi-b"}}],"audio":[{"type":"source","settings":{"source":"D2P280762.analog-b"}}],"background":"#000000","nosignal":{"id":"default"}}'
+
+        ca_url = os.environ['EPI_URL']
+        epicli = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+        response = WebUiChannel.set_channel_layout(
+                client=epicli, channel_id='2',
+                layout=layout)
+        assert response is not None
+        r = json.loads(response)
+        assert r['result']['settings'] == json.loads(layout)
+
+
+
+
 
 

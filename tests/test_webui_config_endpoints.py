@@ -95,6 +95,7 @@ class TestConfiguration(object):
                 client=self.c, source_name='D12345678.hdmi-a')
         assert response
 
+
     @httpretty.activate
     def test_set_source_deinterlacing_didnot_take(self):
         resp_data = resp_datafile('set_source_deinterlacing', 'ok')
@@ -108,3 +109,14 @@ class TestConfiguration(object):
                     client=self.c, source_name='D12345678.hdmi-a', enabled=False)
         assert 'deinterlacing expected to be OFF' in e.value.message
 
+
+    @livetest
+    def test_live_set_touchscreen(self):
+        ca_url = os.environ['EPI_URL']
+        epi = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+
+        response = WebUiConfig.set_touchscreen(
+                client=epi,
+                screen_timeout=453)
+
+        assert response is True
