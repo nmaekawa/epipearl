@@ -18,7 +18,7 @@ import httpretty
 from sure import expect, should, should_not
 
 from conftest import resp_datafile
-from epipearl.epipearl import Epipearl
+from epipearl import Epipearl
 from epipearl.endpoints.webui_config import WebUiConfig
 from epipearl.errors import SettingConfigError
 

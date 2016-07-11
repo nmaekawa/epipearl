@@ -21,7 +21,7 @@ import httpretty
 from sure import expect, should, should_not
 
 from conftest import resp_datafile
-from epipearl.epipearl import Epipearl
+from epipearl import Epipearl
 from epipearl.endpoints.webui_channel import WebUiChannel
 from epipearl.errors import IndiscernibleResponseFromWebUiError
 from epipearl.errors import SettingConfigError
