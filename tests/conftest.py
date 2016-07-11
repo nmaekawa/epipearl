@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import os
-import pytest
+
 
 cwd = os.getcwd()
 
-def pytest_addoption( parser ):
-    parser.addoption("--runlive", action="store_true",
-        help="test with live capture agents" )
+
+def pytest_addoption(parser):
+    parser.addoption(
+            "--runlive", action="store_true",
+            help="test with live capture agents")
 
 
 def resp_datafile(config_type, error_type=None, ext='html'):

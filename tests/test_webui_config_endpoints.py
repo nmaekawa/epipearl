@@ -13,9 +13,7 @@ import os
 os.environ['TESTING'] = 'True'
 
 import pytest
-import requests
 import httpretty
-from sure import expect, should, should_not
 
 from conftest import resp_datafile
 from epipearl import Epipearl
@@ -29,9 +27,10 @@ epiphan_passwd = "passwd"
 # control skipping live tests according to command line option --runlive
 # requires env vars EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE
 livetest = pytest.mark.skipif(
-        not pytest.config.getoption( "--runlive" ),
-        reason = ( "need --runlive option to run, plus env vars",
-            "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE" ) )
+        not pytest.config.getoption("--runlive"),
+        reason=(
+            "need --runlive option to run, plus env vars",
+            "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE"))
 
 
 class TestConfiguration(object):
@@ -42,7 +41,8 @@ class TestConfiguration(object):
     @httpretty.activate
     def test_set_ntp_ok(self):
         resp_data = resp_datafile('set_date_and_time', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
 
@@ -56,7 +56,8 @@ class TestConfiguration(object):
     @httpretty.activate
     def test_set_ntp_invalid_tz(self):
         resp_data = resp_datafile('set_date_and_time', 'invalid_tz')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
 
@@ -71,7 +72,8 @@ class TestConfiguration(object):
     @httpretty.activate
     def test_set_ntp_proto_didnot_take(self):
         resp_data = resp_datafile('set_date_and_time', 'proto_didnot_take')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/timesynccfg' % epiphan_url,
                 body=resp_data)
 
@@ -86,7 +88,8 @@ class TestConfiguration(object):
     @httpretty.activate
     def test_set_source_deinterlacing_ok(self):
         resp_data = resp_datafile('set_source_deinterlacing', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/sources/D12345678.hdmi-a' % epiphan_url,
                 body=resp_data,
                 status=200)
@@ -99,21 +102,24 @@ class TestConfiguration(object):
     @httpretty.activate
     def test_set_source_deinterlacing_didnot_take(self):
         resp_data = resp_datafile('set_source_deinterlacing', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/sources/D12345678.hdmi-a' % epiphan_url,
                 body=resp_data,
                 status=200)
 
         with pytest.raises(SettingConfigError) as e:
             response = WebUiConfig.set_source_deinterlacing(
-                    client=self.c, source_name='D12345678.hdmi-a', enabled=False)
+                    client=self.c, source_name='D12345678.hdmi-a',
+                    enabled=False)
         assert 'deinterlacing expected to be OFF' in e.value.message
 
 
     @livetest
     def test_live_set_touchscreen(self):
         ca_url = os.environ['EPI_URL']
-        epi = Epipearl(ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'] )
+        epi = Epipearl(
+                ca_url, os.environ['EPI_USER'], os.environ['EPI_PASSWD'])
 
         response = WebUiConfig.set_touchscreen(
                 client=epi,

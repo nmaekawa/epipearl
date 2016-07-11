@@ -8,14 +8,17 @@ from setuptools import find_packages
 import os
 import re
 import codecs
+
+
 def read_version():
     version_file = codecs.open(
             os.path.join(
                 os.path.abspath(os.path.dirname(__file__)),
                 'epipearl/__init__.py'),
-            'r', 'utf-8' ).read()
-    return re.search( r"^__version__ = ['\"]([^'\"]*)['\"]",
-            version_file, re.M ).group(1)
+            'r', 'utf-8').read()
+    return re.search(
+            r"^__version__ = ['\"]([^'\"]*)['\"]",
+            version_file, re.M).group(1)
 
 version = read_version()
 
@@ -45,7 +48,7 @@ setup(
     author="nmaekawa",
     author_email='nmaekawa@g.harvard.edu',
     url='https://github.com/harvard-dce/epipearl',
-    packages=find_packages(exclude=[ "docs", "tests*" ]),
+    packages=find_packages(exclude=["docs", "tests*"]),
     package_dir={'epipearl':
                  'epipearl'},
     include_package_data=True,
@@ -63,7 +66,3 @@ setup(
     tests_require=test_requirements,
     zip_safe=False
 )
-
-
-
-

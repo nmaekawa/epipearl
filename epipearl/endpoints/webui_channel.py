@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """http api and web ui calls to epiphan pearl."""
 
-import json
 import logging
 import re
 
@@ -268,29 +267,25 @@ class WebUiChannel(object):
             check_success.append(
                 {
                     'emsg': 'auto file upload expected(OFF)',
-                    'func': WebUiConfig.\
-                            check_singlevalue_checkbox_disabled(
+                    'func': WebUiConfig.check_singlevalue_checkbox_disabled(
                                 tag_id='afu_enabled')})
         else:
             check_success.append(
                 {
                     'emsg': 'auto file upload expected(ON)',
-                    'func': WebUiConfig.\
-                            check_singlevalue_checkbox(
+                    'func': WebUiConfig.check_singlevalue_checkbox(
                                 tag_id='afu_enabled')})
         if upnp_enabled == 'on':
             check_success.append(
                 {
                     'emsg': 'share via UPnP expected(ON)',
-                    'func': WebUiConfig.\
-                            check_singlevalue_checkbox(
+                    'func': WebUiConfig.check_singlevalue_checkbox(
                                 tag_id='upnp_enabled')})
         else:
             check_success.append(
                 {
                     'emsg': 'share via UPnP expected(OFF)',
-                    'func': WebUiConfig.\
-                            check_singlevalue_checkbox_disabled(
+                    'func': WebUiConfig.check_singlevalue_checkbox_disabled(
                                 tag_id='upnp_enabled')})
         params = {
                 'pfd_form_id': 'rec_settings',

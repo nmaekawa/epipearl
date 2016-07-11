@@ -13,13 +13,10 @@ import os
 os.environ['TESTING'] = 'True'
 
 import pytest
-import requests
 import httpretty
-from sure import expect, should, should_not
 
 from conftest import resp_datafile
 from epipearl import Epipearl
-from epipearl import IndiscernibleResponseFromWebUiError
 from epipearl import SettingConfigError
 from epipearl.endpoints.webui_mhpearl import WebUiMhPearl
 
@@ -30,9 +27,10 @@ epiphan_passwd = "cash"
 # control skipping live tests according to command line option --runlive
 # requires env vars EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE
 livetest = pytest.mark.skipif(
-        not pytest.config.getoption( "--runlive" ),
-        reason = ( "need --runlive option to run, plus env vars",
-            "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE" ) )
+        not pytest.config.getoption("--runlive"),
+        reason=(
+            "need --runlive option to run, plus env vars",
+            "EPI_URL, EPI_USER, EPI_PASSWD, EPI_PUBLISH_TYPE"))
 
 
 class TestMhPearl(object):
@@ -43,7 +41,8 @@ class TestMhPearl(object):
     @httpretty.activate
     def test_set_mhpearl_settings_ok(self):
         resp_data = resp_datafile('set_mhpearl_settings', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,
                 status=200)
@@ -68,7 +67,8 @@ class TestMhPearl(object):
     @httpretty.activate
     def test_set_mhpearl_settings_pwd_didnt_take(self):
         resp_data = resp_datafile('set_mhpearl_settings', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,
                 status=200)
@@ -96,7 +96,8 @@ class TestMhPearl(object):
     @httpretty.activate
     def test_set_mhpearl_settings_backup_didnt_take(self):
         resp_data = resp_datafile('set_mhpearl_settings', 'ok')
-        httpretty.register_uri(httpretty.POST,
+        httpretty.register_uri(
+                httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
                 body=resp_data,
                 status=200)
@@ -119,4 +120,3 @@ class TestMhPearl(object):
                 parsed_body['DEVICE_PASSWORD'][0] == epiphan_passwd
         assert httpretty.last_request().\
                 parsed_body['ADMIN_SERVER_PASSWD'][0] == 'doe'
-

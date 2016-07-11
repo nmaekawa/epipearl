@@ -16,6 +16,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 from urlparse import urljoin
 
+from errors import IndiscernibleResponseFromWebUiError
 from endpoints.admin import Admin
 from endpoints.admin import AdminAjax
 from endpoints.webui_channel import WebUiChannel
@@ -317,7 +318,8 @@ class Epipearl(object):
         try:
             r_sysinfo = AdminAjax.get_sysinfo(client=self)
         except Exception as e:
-            msg = 'failed to GET sysinfo for device(%s) - %s' % (self.url, e.message)
+            msg = 'failed to GET sysinfo for device(%s) - %s' % (
+                    self.url, e.message)
             logging.getLogger(__name__).error(msg)
             raise e
 
@@ -343,15 +345,16 @@ class Epipearl(object):
                 sysinfo = self.get_sysinfo()
             except Exception as e:
                 msg = 'failed to delete channel/recorder(%s); ' % channel_name
-                msg += 'GET sysinfo for device(%s) - %s' % (self.url, e.message)
+                msg += 'GET sysinfo for device(%s) - %s' % (
+                        self.url, e.message)
                 logging.getLogger(__name__).error(msg)
                 raise e
 
         channel_id = []
         if 'channels' in sysinfo:
             for c in sysinfo['channels']:
-                if 'name' in c and 'id' in c:      # skip if not enough info
-                    if c['name'].strip() == channel_name:  # but not an error...
+                if 'name' in c and 'id' in c:  # skip if not enough info
+                    if c['name'].strip() == channel_name:  # but not an error
                         channel_id.append(c['id'])
 
         if len(channel_id) == 0:

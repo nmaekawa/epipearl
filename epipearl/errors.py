@@ -7,6 +7,7 @@ __all__ = [
         'IndiscernibleResponseFromWebUiError'
         ]
 
+
 class EpipearlError(Exception):
     """base class to all exceptions raised by this module."""
 
