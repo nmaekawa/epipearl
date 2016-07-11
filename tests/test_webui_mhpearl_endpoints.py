@@ -19,9 +19,9 @@ from sure import expect, should, should_not
 
 from conftest import resp_datafile
 from epipearl import Epipearl
+from epipearl import IndiscernibleResponseFromWebUiError
+from epipearl import SettingConfigError
 from epipearl.endpoints.webui_mhpearl import WebUiMhPearl
-from epipearl.errors import IndiscernibleResponseFromWebUiError
-from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
 epiphan_user = "johnny"
