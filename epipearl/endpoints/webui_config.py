@@ -11,7 +11,7 @@ from epipearl.errors import SettingConfigError
 class WebUiConfig(object):
     """calls to epiphan pearl web ui.
 
-    these are not non-documented calls, so can break if epiphan
+    these are non-documented calls, so can break if epiphan
     changes its webui interface. and beware that these are design
     to fit dce config reqs!
 
@@ -252,6 +252,48 @@ class WebUiConfig(object):
                 client.url, path, r.status_code)
         logging.getLogger(__name__).error(msg)
         raise IndiscernibleResponseFromWebUiError(msg)
+
+
+    @classmethod
+    def scrape_form_values(cls, soup, tag_names, include_blanks=False):
+        """scrape values from input forms specified in check_form_input.
+        """
+        def form_tags_by_name(name):
+            def f(tag):
+                return tag.has_attr('name') and \
+                        tag['name'] == name and \
+                        (tag.name == 'input' or tag.name == 'textarea')
+            return f
+
+
+        result = {}
+        for n in tag_names:
+            tag_list = soup.find_all(form_tags_by_name(name=n))
+            for tag in tag_list:
+                if tag.name == 'input':
+                    if tag.has_attr('type'):
+                        if tag['type'] == 'text' or tag['type'] == 'password':
+                            if tag.has_attr('value'):
+                                result[n] = tag['value']
+                            else:
+                                if include_blanks:
+                                    result[n] = ''
+                        elif tag['type'] == 'checkbox':
+                            if tag.has_attr('checked'):
+                                result[n] = True
+                            else:
+                                result[n] = False
+                        else:
+                            # error - unable to deal with input type tag['type']
+                            logger.error('error parsing value for form '
+                                    'id({}): unable to deal with input'
+                                    'type({})'.format(n, tag['type']))
+                else:  # it's <textarea>
+                    result[n] = tag.string
+            else:  # tag_id not found
+                if include_blanks:
+                    result[n] = ''
+        return result
 
 
     @classmethod

@@ -12,6 +12,8 @@ Tests for `epipearl` config ui endpoints
 import os
 os.environ['TESTING'] = 'True'
 
+from bs4 import BeautifulSoup
+
 import pytest
 import httpretty
 
@@ -126,3 +128,61 @@ class TestConfiguration(object):
                 screen_timeout=453)
 
         assert response is True
+
+
+class TestScrapeForValues(object):
+
+    scraped_values = {
+            'DEVICE_NAME': u'lab-2',
+            'DEVICE_ADDRESS': u'http://device_fake_address.blah.blof.edu',
+            'DEVICE_USERNAME': u'device_fake_user',
+            'DEVICE_PASSWORD': u'device_fake_password',
+            'DEVICE_CHANNEL': u'1',
+            'DEVICE_LIVE_CHANNELS': u'2,3',
+            'DEVICE_LIVE_STREAMS': u'''
+                    {"streams": { "1920x540": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-1920x540_1_200@888888" , "960x270": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-960x270_1_200@111111"}}                ''',
+            'MANAGE_LIVE': True,
+            'FILE_SEARCH_RANGE': u'60',
+            'ADMIN_SERVER_URL': u'admin_server_fake_url.compute-1.amazonaws.com',
+            'ADMIN_SERVER_USER': u'admin_server_fake_user',
+            'ADMIN_SERVER_PASSWD': u'admin_server_fake_pass',
+            'UPDATE_FREQUENCY': u'120',
+            'CONNECTTIMEOUT': u'60',
+            'LOW_SPEED_TIME': u'300',
+            'MAX_INGEST': u'1',
+            'INGEST_DELAY': u'60',
+            'NUMBER_OF_RETRIES': u'5',
+            'BACKUP_AGENT': False,
+        }
+
+    def test_scrape_form_values_ok(self):
+        resp_html = resp_datafile('get_mhcfg', 'ok')
+        soup = BeautifulSoup(resp_html, 'html.parser')
+        r = WebUiConfig.scrape_form_values(
+                soup=soup,
+                tag_names = [
+                    'DEVICE_NAME',
+                    'DEVICE_ADDRESS',
+                    'DEVICE_USERNAME',
+                    'DEVICE_PASSWORD',
+                    'DEVICE_CHANNEL',
+                    'DEVICE_LIVE_CHANNELS',
+                    'DEVICE_LIVE_STREAMS',
+                    'MANAGE_LIVE',
+                    'FILE_SEARCH_RANGE',
+                    'ADMIN_SERVER_URL',
+                    'ADMIN_SERVER_USER',
+                    'ADMIN_SERVER_PASSWD',
+                    'UPDATE_FREQUENCY',
+                    'CONNECTTIMEOUT',
+                    'LOW_SPEED_TIME',
+                    'MAX_INGEST',
+                    'INGEST_DELAY',
+                    'NUMBER_OF_RETRIES',
+                    'BACKUP_AGENT',
+                ]
+        )
+        assert r == self.scraped_values
+
+
+

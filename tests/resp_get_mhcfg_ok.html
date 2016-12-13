@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+  <head>
+    <title>Matterhorn - mhcfg</title>
+    <link href="/css/styles.css"  type=text/css rel=stylesheet>
+    <link href="/css/matterhorn_v2u_embedded.css" type=text/css rel=stylesheet>
+    <link href="/css/matterhorn.css" type=text/css rel=stylesheet>
+
+    <script type="text/javascript" src="/js/jquery.js"></script>
+    <script type="text/javascript" src="/js/jquery.jeditable.mini.js"></script>
+    <script type="text/javascript" src="/admin/js/updater.js"></script>
+    <script type="text/javascript" src="/admin/js/forms.js"></script>
+  </head>
+
+  <body>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" id="topbanner">
+  <tr>
+    <td valign="bottom" width="1"><a href="http://www.opencastproject.org/project/matterhorn" style="outline-style: none" target="_blank"><img src="/images/matterhorn_logo.png" alt="matterhorn" title="matterhorn main page" border="0"/></a></td>
+    <td VALIGN="center" align="center" id="systemdescr"></td>
+    <td VALIGN="center" align="right" class="productname">
+        Matterhorn    </td>
+  </tr>
+</table>
+      <div class="wrapper">
+<div class="role" ><span class="role-name">Administrator</span><a href="/logout.cgi" class="role-logout" id="logout-button"></a></div><div style="height:30px"></div>           <div class="wrapper_content">
+      <div id="nav_column">
+<div class="category_1"><h1>Channels</h1><style type="text/css">
+
+div.navmenu a.simple {
+	color: blue;
+	background: none;
+    border-bottom:0px dashed blue;
+}
+
+</style>
+
+<div class="category_1">
+<div class="category_2" id="1"><h1><span style="color:#808080">&nbsp;1.</span> <a id="menu_channel_1" href="/admin/channel1/status">dce_pr</a></h1>
+</div>
+<div class="category_2" id="2"><h1><span style="color:#808080">&nbsp;2.</span> <a id="menu_channel_2" href="/admin/channel2/status">dce_live_lowbr</a></h1>
+</div>
+<div class="category_2" id="3"><h1><span style="color:#808080">&nbsp;3.</span> <a id="menu_channel_3" href="/admin/channel3/status">dce_live</a></h1>
+</div>
+<div class="category_2" id="4"><h1><span style="color:#808080">&nbsp;4.</span> <a id="menu_channel_4" href="/admin/channel4/status">dce_pn</a></h1>
+</div>
+<div class="navmenu"><a class="simple" href="/admin/add_channel.cgi"><nobr>Add channel</nobr></a></div></div>
+</div><div class="category_1"><h1>Recorders</h1><style type="text/css">
+
+div.navmenu a.simple {
+	color: blue;
+	background: none;
+    border-bottom:0px dashed blue;
+}
+
+</style>
+
+<div class="category_1"><div class="category_2"><h1><span style="color:#808080">&nbsp;1.</span> <a id="menu_mrecorder_1" href="/admin/recorder1/archive">Recorder 1</a></h1></div><div class="category_2"><h1><span style="color:#808080">&nbsp;4.</span> <a id="menu_mrecorder_4" href="/admin/recorder4/archive">Recorder 4</a></h1></div><div class="category_2"><h1><span style="color:#808080">&nbsp;5.</span> <a id="menu_mrecorder_5" href="/admin/recorder5/archive">Recorder 5</a></h1></div><div class="navmenu"><a class="simple" href="/admin/add_recorder.cgi"><nobr>Add recorder</nobr></a></div></div></div><div class="category_1"><h1>Sources</h1><style type="text/css">
+
+div.navmenu a.simple {
+    color: blue;
+    background: none;
+    border-bottom:0px dashed blue;
+}
+
+</style>
+
+<div class="navmenu"><div><a id='menu_dev_D2P280083.hdmi-a' href="/admin/sources/D2P280083.hdmi-a">HDMI-A</a></div><div><a id='menu_dev_D2P280083.hdmi-b' href="/admin/sources/D2P280083.hdmi-b">HDMI-B</a></div><div><a id='menu_dev_D2P280083.sdi-a' href="/admin/sources/D2P280083.sdi-a">SDI-A</a></div><div><a id='menu_dev_D2P280083.sdi-b' href="/admin/sources/D2P280083.sdi-b">SDI-B</a></div><div><a id='menu_dev_D2P280083.vga-a' href="/admin/sources/D2P280083.vga-a">VGA-A</a></div><div><a id='menu_dev_D2P280083.vga-b' href="/admin/sources/D2P280083.vga-b">VGA-B</a></div><div><a id='menu_dev_D2P280083.analog-a' href="/admin/sources/audio_D2P280083.analog-a">Analog-A Audio</a></div><div><a id='menu_dev_D2P280083.analog-b' href="/admin/sources/audio_D2P280083.analog-b">Analog-B Audio</a></div><div><a id='menu_dev_D2P280083.hdmi-a-audio' href="/admin/sources/audio_D2P280083.hdmi-a-audio">HDMI-A Audio</a></div><div><a id='menu_dev_D2P280083.hdmi-b-audio' href="/admin/sources/audio_D2P280083.hdmi-b-audio">HDMI-B Audio</a></div><div><a id='menu_dev_D2P280083.sdi-a-audio' href="/admin/sources/audio_D2P280083.sdi-a-audio">SDI-A Audio</a></div><div><a id='menu_dev_D2P280083.sdi-b-audio' href="/admin/sources/audio_D2P280083.sdi-b-audio">SDI-B Audio</a></div></div></div>        <div class="category_1"><h1>Configuration</h1>
+          <div class="navmenu">
+            <div id="navmenucurrent"><a href="/admin/mhcfg">Matterhorn Server</a></div>
+          <a href="/admin/afucfg">Automatic File Upload</a>
+          <a href="/admin/usbdrivecfg">External USB drive</a>
+          <a href="/admin/ftpaccesscfg">FTP Server</a>
+          <a href="/admin/upnp">UPnP</a>
+          <a href="/admin/networkcfg">Network</a>
+          <a href="/admin/timesynccfg">Date and Time</a>
+          <a href="/admin/accesscfg">Access passwords</a>
+          <a href="/admin/touchscreencfg">Touch Screen</a>
+          <a href="/admin/serialcfg">Serial Port</a>
+          <a href="/admin/cms">Branding Content</a>
+          <a href="/admin/maintenancecfg">Maintenance</a>
+          <a href="/admin/diskcheckcfg">Disk check</a>
+          <a href="/admin/firmwarecfg">Firmware Upgrade</a>
+          <a href="/admin/infocfg">Info</a>
+          </div>
+        </div>
+<div class="category_1"><h1>Internal storage</h1>
+Total: 929.85 GB<br/>
+Used: 777.59 GB<br/>
+Free: 152.26 GB<br/>
+<table cellpadding="0" cellspacing="0" id="graph" style="width:100%">
+  <tr>
+    <td width="83%" id="red_graph"></td>
+    <td width="17%" align="center" id="green_graph">17%</td>
+  </tr>
+</table>
+</div>      </div>
+      <div id=main_win>
+      <div id="global_message_banner"></div><h1>Matterhorn Configuration</h1>
+<form name="mh_config" id="mh_config" method="post" action="">
+    <table class="forms_table">
+        <tbody>
+            <tr>
+                <td colspan="2">
+                <h2>MHPearl Version: 3.0.0</h2>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <h3 style="padding:0 0 0 2em;">Capture Agent</h3>
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Capture Agent Name:</nobr>
+                </td>
+                <td>
+                    <input id="ca_name" name="DEVICE_NAME" type="text" size="40" value="lab-2">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>External URL of this device(full url, no trailing /,eg:http://dev-epiphan.dce.harvard.edu):</nobr>
+                </td>
+                <td>
+                    <input id="dev_url" name="DEVICE_ADDRESS" type="text" size="40" value="http://device_fake_address.blah.blof.edu">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Epiphan Pearl Username:</nobr>
+                </td>
+                <td>
+                    <input id="ca_user" name="DEVICE_USERNAME" type="text" size="40" value="device_fake_user">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Epiphan Pearl Password:</nobr>
+                </td>
+                <td>
+                    <input id="ca_pass" name="DEVICE_PASSWORD" type="password" size="40" value="device_fake_password">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Recorder to use (#):</nobr>
+                </td>
+                <td>
+                    <input id="ca_chan" name="DEVICE_CHANNEL" type="text" size="8" value="1">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Live Channels to use (comma separated #):</nobr>
+                </td>
+                <td>
+                    <input id="ca_live_chan" name="DEVICE_LIVE_CHANNELS" type="text" size="8" value="2,3">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Live Streams by resolution (JSON {"streams":{<resolution>:<url>,<resolution>:<url>}}):</nobr>
+                </td>
+                <td>
+                <textarea id="ca_live_stream" name="DEVICE_LIVE_STREAMS" rows="4" cols="40">
+                    {"streams": { "1920x540": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-1920x540_1_200@888888" , "960x270": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-960x270_1_200@111111"}}                </textarea>
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Manage live streaming</nobr>
+                </td>
+                <td>
+                    <input id="manage_live" name="MANAGE_LIVE" type="checkbox" value="on" checked >
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>File Search Range (seconds from scheduled start):</nobr>
+                </td>
+                <td>
+                    <input id="ca_range" name="FILE_SEARCH_RANGE" type="text" size="8" value="60">
+                </td>
+            </tr>            
+            <tr>
+                <td colspan="2">
+                    <h3 style="padding:0 0 0 2em;">Matterhorn Server</h3>
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Server Host URL:</nobr>
+                </td>
+                <td>
+                    <input id="mh_host" name="ADMIN_SERVER_URL" type="text" size="40" value="admin_server_fake_url.compute-1.amazonaws.com">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Digest User:</nobr>
+                </td>
+                <td>
+                    <input id="mh_user" name="ADMIN_SERVER_USER" type="text" size="40" value="admin_server_fake_user">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Digest Password:</nobr>
+                </td>
+                <td>
+                    <input id="mh_pass" name="ADMIN_SERVER_PASSWD" type="password" size="40" value="admin_server_fake_pass">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Schedule Update Frequency (seconds):</nobr>
+                </td>
+                <td>
+                    <input id="mh_freq" name="UPDATE_FREQUENCY" type="text" size="8" value="120">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Connection Timeout (seconds):</nobr>
+                </td>
+                <td>
+                    <input id="mh_connecttimeout" name="CONNECTTIMEOUT" type="text" size="8" value="60">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Low Transmission Rate Timeout (seconds):</nobr>
+                </td>
+                <td>
+                    <input id="mh_low_speed" name="LOW_SPEED_TIME" type="text" size="8" value="300">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Max number of Ingest before adding random delays:</nobr>
+                </td>
+                <td>
+                    <input id="mh_ingest" name="MAX_INGEST" type="text" size="8" value="1">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Max Delay in Seconds (Before Ingest):</nobr>
+                </td>
+                <td>
+                    <input id="mh_ingest" name="INGEST_DELAY" type="text" size="8" value="60">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Number of Ingest Retries:</nobr>
+                </td>
+                <td>
+                    <input id="mh_retries" name="NUMBER_OF_RETRIES" type="text" size="8" value="5">
+                </td>
+            </tr>
+            <tr>
+                <td class="forms_tdtitle" valign="top">
+                    <nobr>Run as Backup Capture Agent:</nobr>
+                </td>
+                <td>
+                    <input id="mh_backup" name="BACKUP_AGENT" type="checkbox" value="on"  >
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align:right"><a href="/admin/download_permanent_logs.cgi">Download logs</a></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td>
+                    <input class="apply_button" id="apply_mhconfig" type="submit" value="Apply">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>
+      </div>
+      </div>
+      </div>
+
+
+  </body>
+</html>
+
