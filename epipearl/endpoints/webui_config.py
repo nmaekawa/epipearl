@@ -4,9 +4,9 @@
 from bs4 import BeautifulSoup
 import logging
 
+import epipearl.endpoints.webui_scrape
 from epipearl.errors import IndiscernibleResponseFromWebUiError
 from epipearl.errors import SettingConfigError
-
 
 class WebUiConfig(object):
     """calls to epiphan pearl web ui.
@@ -59,6 +59,22 @@ class WebUiConfig(object):
             return tag.has_attr('id') and \
                     tag['id'] == tag_id and \
                     tag['value'] == value
+        return f
+
+    @classmethod
+    def check_input_name_value(cls, tag_name, value):
+        def f(tag):
+            return tag.has_attr('name') and \
+                    tag['name'] == tag_name and \
+                    tag['value'] == value
+        return f
+
+    @classmethod
+    def check_textarea_id_value(cls, tag_id, value):
+        def f(tag):
+            return tag.has_attr('id') and \
+                    tag['id'] == tag_id and \
+                    tag.string == value
         return f
 
 
@@ -238,7 +254,6 @@ class WebUiConfig(object):
                 logger.error(msg)
                 raise SettingConfigError(msg)
             else:
-                # no error msg, check that updates took place
                 for c in check_success:
                     tags = soup.find_all(c['func'])
                     if not tags:
@@ -285,7 +300,7 @@ class WebUiConfig(object):
                                 result[n] = False
                         else:
                             # error - unable to deal with input type tag['type']
-                            logger.error('error parsing value for form '
+                            logging.getLogger(__name__).error('error parsing value for form '
                                     'id({}): unable to deal with input'
                                     'type({})'.format(n, tag['type']))
                 else:  # it's <textarea>

@@ -36,11 +36,18 @@ livetest = pytest.mark.skipif(
 class TestMhPearl(object):
 
     def setup_method(self, method):
+        self.resp_ok = resp_datafile('get_mhcfg', 'ok')
         self.c = Epipearl(epiphan_url, epiphan_user, epiphan_passwd)
+        self.output_streams = '''{"streams": {"1920x540": "rtmp://cp123456.live.edgefcs.net/live/lab-2-presenter-delivery.stream-1920x540_1_200@121212", "960x270": "rtmp://cp123456.live.edgefcs.net/live/lab-2-presenter-delivery.stream-960x270_1_200@121212" }}'''
 
     @httpretty.activate
     def test_set_mhpearl_settings_ok(self):
-        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhcfg', 'ok')
+        httpretty.register_uri(
+                httpretty.GET,
+                '%s/admin/mhcfg' % epiphan_url,
+                body=self.resp_ok,
+                status=200)
         httpretty.register_uri(
                 httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
@@ -49,8 +56,11 @@ class TestMhPearl(object):
 
         response = WebUiMhPearl.set_mhpearl_settings(
                 client=self.c,
-                device_name='dev-epiphan006',
+                device_name='fake-ca-room',
                 device_channel='6',
+                device_live_channels=['5', '6'],
+                output_streams=self.output_streams,
+                live_nonstop=False,
                 file_search_range_in_seconds=100,
                 admin_server_url='http://52.72.59.90:80',
                 admin_server_usr='jane',
@@ -66,7 +76,12 @@ class TestMhPearl(object):
 
     @httpretty.activate
     def test_set_mhpearl_settings_pwd_didnt_take(self):
-        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhcfg', 'ok')
+        httpretty.register_uri(
+                httpretty.GET,
+                '%s/admin/mhcfg' % epiphan_url,
+                body=self.resp_ok,
+                status=200)
         httpretty.register_uri(
                 httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
@@ -76,8 +91,11 @@ class TestMhPearl(object):
         with pytest.raises(SettingConfigError) as e:
             response = WebUiMhPearl.set_mhpearl_settings(
                     client=self.c,
-                    device_name='dev-epiphan006',
+                    device_name='fake-ca-room',
                     device_channel='6',
+                    device_live_channels=['5', '6'],
+                    output_streams=self.output_streams,
+                    live_nonstop=False,
                     file_search_range_in_seconds=100,
                     admin_server_url='http://52.72.59.90:80',
                     admin_server_usr='jane',
@@ -95,7 +113,12 @@ class TestMhPearl(object):
 
     @httpretty.activate
     def test_set_mhpearl_settings_backup_didnt_take(self):
-        resp_data = resp_datafile('set_mhpearl_settings', 'ok')
+        resp_data = resp_datafile('set_mhcfg', 'ok')
+        httpretty.register_uri(
+                httpretty.GET,
+                '%s/admin/mhcfg' % epiphan_url,
+                body=self.resp_ok,
+                status=200)
         httpretty.register_uri(
                 httpretty.POST,
                 '%s/admin/mhcfg' % epiphan_url,
@@ -105,8 +128,11 @@ class TestMhPearl(object):
         with pytest.raises(SettingConfigError) as e:
             response = WebUiMhPearl.set_mhpearl_settings(
                     client=self.c,
-                    device_name='dev-epiphan006',
+                    device_name='fake-ca-room',
                     device_channel='6',
+                    device_live_channels=['5', '6'],
+                    output_streams=self.output_streams,
+                    live_nonstop=False,
                     file_search_range_in_seconds=100,
                     admin_server_url='http://52.72.59.90:80',
                     admin_server_usr='jane',
