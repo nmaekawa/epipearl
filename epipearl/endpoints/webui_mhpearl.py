@@ -2,9 +2,15 @@
 """http api and web ui calls to epiphan pearl."""
 
 from bs4 import BeautifulSoup
+import json
+import logging
 
 from epipearl.endpoints.webui_config import WebUiConfig
 import epipearl.endpoints.webui_scrape as webui_scrape
+from epipearl.errors import SettingConfigError
+
+
+WEBUI_MH_FORM_NAME = 'mh_config'
 
 
 class WebUiMhPearl(object):
@@ -35,196 +41,122 @@ class WebUiMhPearl(object):
             backup_agent=False):  # if True, does not upload recording to
                                   # mh when done
 
+        # check that output_streams is valid json
+        if output_streams:
+            ostreams = json.dumps(output_streams)
+
         # get current settings for mhpearl
-        current = cls.get_mhpearl_settings(client)
+        expected = cls.get_mhpearl_settings(client)
 
         # update with input values to be changed
-        current['DEVICE_NAME'] = device_name
-        current['DEVICE_ADDRESS'] = client.url
-        current['DEVICE_USERNAME'] = client.user
-        current['DEVICE_PASSWORD'] = client.passwd
-        current['DEVICE_CHANNEL'] = device_channel
-        current['DEVICE_LIVE_CHANNELS'] = ','.join(device_live_channels)
-        current['DEVICE_LIVE_STREAMS'] = output_streams
-        current['FILE_SEARCH_RANGE'] = file_search_range_in_seconds
-        current['ADMIN_SERVER_URL'] = admin_server_url
-        current['ADMIN_SERVER_USER'] = admin_server_usr
-        current['ADMIN_SERVER_PASSWD'] = admin_server_pwd
-        current['UPDATE_FREQUENCY'] = update_frequency_in_seconds
-
-
-
-
-        # keep the defaults for now
-        # current['CONNECTTIMEOUT'] =,
-        # current['LOW_SPEED_TIME'] =,
-        # current['MAX_INGEST'] =,
-        # current['INGEST_DELAY'] =,
-        # current['NUMBER_OF_RETRIES'] =,
-
-        check_success = [
-                {
-                    'emsg': 'device_name expected({})'.format(device_name),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_name', value=device_name),
-                },
-                {
-                    'emsg': 'device_username expected({})'.format(client.user),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_user', value=client.user),
-                },
-                {
-                    'emsg': 'not the device_password expected',
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_pass', value=client.passwd),
-                },
-                {
-                    'emsg': 'device_channel expected({})'.format(device_channel),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_chan', value=device_channel),
-                },
-                {
-                    'emsg': 'live channels expected({})'.format(
-                        ','.join(device_live_channels)),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_live_chan',
-                        value=','.join(device_live_channels)),
-                },
-                {
-                    'emsg': 'output live streams expected: {}'.format(
-                        output_streams),
-                    'func': WebUiConfig.check_textarea_id_value(
-                        tag_id='ca_live_stream', value=output_streams),
-                },
-                {
-                    'emsg': 'file_search_range expected({})'.format(
-                        file_search_range_in_seconds),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='ca_range',
-                        value=str(file_search_range_in_seconds)),
-                },
-                {
-                    'emsg': 'admin_server_url expected({})'.format(
-                        admin_server_url),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_host', value=admin_server_url),
-                },
-                {
-                    'emsg': 'admin_server_user expected({})'.format(
-                        admin_server_usr),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_user', value=admin_server_usr),
-                },
-                {
-                    'emsg': 'not the admin_server_passwd expected',
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_pass', value=admin_server_pwd),
-                },
-                {
-                    'emsg': 'update_frequency expected({})'.format(
-                        update_frequency_in_seconds),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_freq',
-                        value=str(update_frequency_in_seconds)),
-                },
-                {
-                    'emsg': 'connecttimeout expected({})'.format(
-                        current['CONNECTTIMEOUT']),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_connecttimeout',
-                        value=str(current['CONNECTTIMEOUT'])),
-                },
-                {
-                    'emsg': 'low_speed_time expected({})'.format(
-                        current['LOW_SPEED_TIME']),
-                    'func': WebUiConfig.check_input_id_value(
-                        tag_id='mh_low_speed',
-                        value=str(current['LOW_SPEED_TIME'])),
-                },
-                {
-                    'emsg': 'max_ingest expected({})'.format(
-                        current['MAX_INGEST']),
-                    'func': WebUiConfig.check_input_name_value(
-                        tag_name='MAX_INGEST',
-                        value=str(current['MAX_INGEST'])),
-                },
-                {
-                    'emsg': 'ingest_delay expected({})'.format(
-                        current['INGEST_DELAY']),
-                    'func': WebUiConfig.check_input_name_value(
-                        tag_name='INGEST_DELAY',
-                        value=str(current['INGEST_DELAY'])),
-                },
-                {
-                    'emsg': 'number_of_retries expected({})'.format(
-                        current['NUMBER_OF_RETRIES']),
-                    'func': WebUiConfig.check_input_name_value(
-                        tag_name='NUMBER_OF_RETRIES',
-                        value=str(current['NUMBER_OF_RETRIES'])),
-                },
-            ]
+        expected['DEVICE_NAME'] = device_name
+        expected['DEVICE_ADDRESS'] = client.url
+        expected['DEVICE_USERNAME'] = client.user
+        expected['DEVICE_PASSWORD'] = client.passwd
+        expected['DEVICE_CHANNEL'] = device_channel
+        expected['DEVICE_LIVE_CHANNELS'] = ','.join(device_live_channels)
+        expected['DEVICE_LIVE_STREAMS'] = output_streams
+        expected['FILE_SEARCH_RANGE'] = file_search_range_in_seconds
+        expected['ADMIN_SERVER_URL'] = admin_server_url
+        expected['ADMIN_SERVER_USER'] = admin_server_usr
+        expected['ADMIN_SERVER_PASSWD'] = admin_server_pwd
+        expected['UPDATE_FREQUENCY'] = update_frequency_in_seconds
 
         if not live_nonstop:
-            current['MANAGE_LIVE'] = 'on'
-            check_success.append({
-                'emsg': 'live_nonstop expected("ON")',
-                'func': WebUiConfig.check_singlevalue_checkbox(
-                    tag_id='manage_live')})
+            expected['MANAGE_LIVE'] = 'on'
         else:
-            check_success.append({
-                'emsg': 'live_nonstop expected("OFF")',
-                'func': WebUiConfig.
-                        check_singlevalue_checkbox_disabled(
-                            tag_id='manage_live')})
+            del(expected['MANAGE_LIVE'])
 
         if backup_agent:
-            current['BACKUP_AGENT'] = 'on'
-            check_success.append({
-                'emsg': 'backup_agent expected("ON")',
-                'func': WebUiConfig.check_singlevalue_checkbox(
-                    tag_id='mh_backup')})
+            expected['BACKUP_AGENT'] = 'on'
         else:
-            check_success.append({
-                'emsg': 'backup_agent expected("OFF")',
-                'func': WebUiConfig.
-                        check_singlevalue_checkbox_disabled(
-                            tag_id='mh_backup')})
+            del(expected['BACKUP_AGENT'])
+
+        # keep the defaults for now
+        # expected['CONNECTTIMEOUT'] =,
+        # expected['LOW_SPEED_TIME'] =,
+        # expected['MAX_INGEST'] =,
+        # expected['INGEST_DELAY'] =,
+        # expected['NUMBER_OF_RETRIES'] =,
 
         path = '/admin/mhcfg'
-        return WebUiConfig.configuration(
+        de_facto = WebUiConfig.handle_form(
                 client=client,
-                params=current,
                 path=path,
-                check_success=check_success)
+                form_name=WEBUI_MH_FORM_NAME,
+                params=expected)
+        for key in ['DEVICE_NAME', 'DEVICE_ADDRESS','DEVICE_USERNAME',
+                'DEVICE_PASSWORD', 'DEVICE_CHANNEL', 'DEVICE_LIVE_CHANNELS',
+                'FILE_SEARCH_RANGE', 'ADMIN_SERVER_URL', 'ADMIN_SERVER_USER',
+                'ADMIN_SERVER_PASSWD', 'UPDATE_FREQUENCY',]:
+            if str(expected[key]) != str(de_facto[key]):
+                msg = 'mh_config prop({}) expected({}), got({})'.format(
+                        key, expected[key], de_facto[key])
+                logging.getLogger(__name__).error(msg)
+                raise SettingConfigError(msg)
+
+        # check for checkbox
+        if not live_nonstop:  # expected to have it ON
+            if not de_facto['MANAGE_LIVE']:
+                msg = 'mh_config prop(MANAGE_LIVE) expected(ON), got(OFF)'
+                raise SettingConfigError(msg)
+        else:  # expected to have it OFF
+            if de_facto['MANAGE_LIVE']:
+                msg = 'mh_config prop(MANAGE_LIVE) expected(OFF), got(ON)'
+                raise SettingConfigError(msg)
+
+        if not backup_agent:
+            if de_facto['BACKUP_AGENT']:
+                msg = 'mh_config prop(BACKUP_AGENT) expected(OFF), got(ON)'
+                raise SettingConfigError(msg)
+        else:
+            if not de_facto['BACKUP_AGENT']:
+                msg = 'mh_config prop(BACKUP_AGENT) expected(ON), got(OFF)'
+                raise SettingConfigError(msg)
+
+        # check for textarea (that contains a json)
+        if output_streams:
+            expected_ostreams = json.loads(expected['DEVICE_LIVE_STREAMS'])
+            de_facto_ostreams = json.loads(de_facto['DEVICE_LIVE_STREAMS'])
+            if expected_ostreams != de_facto_ostreams:
+                msg = ('mh_config prop(DEVICE_LIVE_STREAMS) expected({}), '
+                    'got({})').format(expected_ostreams, de_facto_ostreams)
+                logging.getLogger(__name__).error(msg)
+                raise SettingConfigError(msg)
+
+        return de_facto
 
 
     @classmethod
     def get_mhpearl_settings(cls, client):
         path = '/admin/mhcfg'
-        resp = client.get(path)
-        resp_doc = BeautifulSoup(resp.text, 'html.parser')
+        settings = WebUiConfig.handle_form(
+                client=client,
+                path=path,
+                form_name=WEBUI_MH_FORM_NAME)
 
-        return WebUiConfig.scrape_form_values(
-                soup=soup,
-                tag_names = [
-                    'DEVICE_NAME',
-                    'DEVICE_ADDRESS',
-                    'DEVICE_USERNAME',
-                    'DEVICE_PASSWORD',
-                    'DEVICE_CHANNEL',
-                    'DEVICE_LIVE_CHANNELS',
-                    'DEVICE_LIVE_STREAMS',
-                    'MANAGE_LIVE',
-                    'FILE_SEARCH_RANGE',
-                    'ADMIN_SERVER_URL',
-                    'ADMIN_SERVER_USER',
-                    'ADMIN_SERVER_PASSWD',
-                    'UPDATE_FREQUENCY',
-                    'CONNECTTIMEOUT',
-                    'LOW_SPEED_TIME',
-                    'MAX_INGEST',
-                    'INGEST_DELAY',
-                    'NUMBER_OF_RETRIES',
-                    'BACKUP_AGENT',
-                ]
-        )
+        # TODO: how to sanity check?
+        return settings
+
+# names of form fields for mh_config
+#                tag_names = [
+#                    'DEVICE_NAME',
+#                    'DEVICE_ADDRESS',
+#                    'DEVICE_USERNAME',
+#                    'DEVICE_PASSWORD',
+#                    'DEVICE_CHANNEL',
+#                    'DEVICE_LIVE_CHANNELS',
+#                    'DEVICE_LIVE_STREAMS',
+#                    'MANAGE_LIVE',
+#                    'FILE_SEARCH_RANGE',
+#                    'ADMIN_SERVER_URL',
+#                    'ADMIN_SERVER_USER',
+#                    'ADMIN_SERVER_PASSWD',
+#                    'UPDATE_FREQUENCY',
+#                    'CONNECTTIMEOUT',
+#                    'LOW_SPEED_TIME',
+#                    'MAX_INGEST',
+#                    'INGEST_DELAY',
+#                    'NUMBER_OF_RETRIES',
+#                    'BACKUP_AGENT',
+#                ]

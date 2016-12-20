@@ -102,7 +102,8 @@ class TestMhPearl(object):
                     admin_server_pwd='plumber',
                     update_frequency_in_seconds=122,
                     backup_agent=True)
-        assert 'not the admin_server_passwd expected' in e.value.message
+
+        assert 'expected(plumber), got(doe)' in e.value.message
         assert httpretty.last_request().\
                 parsed_body['DEVICE_USERNAME'][0] == epiphan_user
         assert httpretty.last_request().\
@@ -138,8 +139,13 @@ class TestMhPearl(object):
                     admin_server_usr='jane',
                     admin_server_pwd='doe',
                     update_frequency_in_seconds=122,
-                    backup_agent=False)
-        assert 'backup_agent expected("ON")' in e.value.message
+                    backup_agent=True)
+
+            import pprint
+            pp = pprint.PrettyPrinter(indent=4)
+            pp.pprint(response)
+
+        assert '(BACKUP_AGENT) expected(ON)' in e.value.message
         assert httpretty.last_request().\
                 parsed_body['DEVICE_USERNAME'][0] == epiphan_user
         assert httpretty.last_request().\

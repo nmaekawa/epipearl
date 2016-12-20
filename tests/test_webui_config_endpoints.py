@@ -140,7 +140,7 @@ class TestConfiguration(object):
                 '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
                 body=resp_data,
                 status=200)
-        response = WebUiConfig.webui_configuration(
+        response = WebUiConfig.handle_form(
                 client=self.c, path='/admin/sources/D12345678.hdmi-a',
                 form_name='form_example')
 
@@ -159,7 +159,7 @@ class TestConfiguration(object):
                 '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
                 body=resp_data,
                 status=200)
-        response = WebUiConfig.webui_configuration(
+        response = WebUiConfig.handle_form(
                 client=self.c, path='/admin/sources/D12345678.hdmi-a',
                 form_name='form_example', params=example_values)
 
@@ -175,7 +175,7 @@ class TestConfiguration(object):
                 body=resp_data,
                 status=200)
         with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
-            response = WebUiConfig.webui_configuration(
+            response = WebUiConfig.handle_form(
                     client=self.c, path='/admin/sources/D12345678.hdmi-a',
                     form_name='form_example')
 
@@ -191,7 +191,7 @@ class TestConfiguration(object):
                 body=resp_data,
                 status=200)
         with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
-            response = WebUiConfig.webui_configuration(
+            response = WebUiConfig.handle_form(
                     client=self.c, path='/admin/sources/D12345678.hdmi-a',
                     form_name='form_example')
 
@@ -207,7 +207,7 @@ class TestConfiguration(object):
                 body=resp_data,
                 status=200)
         with pytest.raises(SettingConfigError) as e:
-            response = WebUiConfig.webui_configuration(
+            response = WebUiConfig.handle_form(
                     client=self.c, path='/admin/sources/D12345678.hdmi-a',
                     form_name='form_example')
 

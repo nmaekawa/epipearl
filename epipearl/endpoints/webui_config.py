@@ -226,7 +226,8 @@ class WebUiConfig(object):
                 params=params,
                 check_success=check_success)
 
-
+    # TODO: deprecated, replace with handle_form for
+    # better error messages.
     @classmethod
     def configuration(cls, client, params, check_success, path):
         """generic request to config form
@@ -271,7 +272,7 @@ class WebUiConfig(object):
 
 
     @classmethod
-    def webui_configuration(cls, client, path, form_name, params=None):
+    def handle_form(cls, client, path, form_name, params=None):
         """generic request to config form
 
         client: epipearl client instance
