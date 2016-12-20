@@ -4,6 +4,7 @@
 from bs4 import BeautifulSoup
 
 from epipearl.endpoints.webui_config import WebUiConfig
+import epipearl.endpoints.webui_scrape as webui_scrape
 
 
 class WebUiMhPearl(object):
@@ -201,7 +202,8 @@ class WebUiMhPearl(object):
     def get_mhpearl_settings(cls, client):
         path = '/admin/mhcfg'
         resp = client.get(path)
-        soup = BeautifulSoup(resp.text, 'html.parser')
+        resp_doc = BeautifulSoup(resp.text, 'html.parser')
+
         return WebUiConfig.scrape_form_values(
                 soup=soup,
                 tag_names = [

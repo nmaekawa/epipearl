@@ -18,9 +18,11 @@ import pytest
 import httpretty
 
 from conftest import resp_datafile
+from conftest import example_form_values
 from epipearl import Epipearl
-from epipearl import SettingConfigError
 from epipearl.endpoints.webui_config import WebUiConfig
+from epipearl.errors import IndiscernibleResponseFromWebUiError
+from epipearl.errors import SettingConfigError
 
 epiphan_url = "http://fake.example.edu"
 epiphan_user = "user"
@@ -130,59 +132,83 @@ class TestConfiguration(object):
         assert response is True
 
 
-class TestScrapeForValues(object):
+    @httpretty.activate
+    def test_get_configuration(self):
+        resp_data = resp_datafile('set_example_form', 'ok')
+        httpretty.register_uri(
+                httpretty.GET,
+                '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
+                body=resp_data,
+                status=200)
+        response = WebUiConfig.webui_configuration(
+                client=self.c, path='/admin/sources/D12345678.hdmi-a',
+                form_name='form_example')
 
-    scraped_values = {
-            'DEVICE_NAME': u'lab-2',
-            'DEVICE_ADDRESS': u'http://device_fake_address.blah.blof.edu',
-            'DEVICE_USERNAME': u'device_fake_user',
-            'DEVICE_PASSWORD': u'device_fake_password',
-            'DEVICE_CHANNEL': u'1',
-            'DEVICE_LIVE_CHANNELS': u'2,3',
-            'DEVICE_LIVE_STREAMS': u'''
-                    {"streams": { "1920x540": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-1920x540_1_200@888888" , "960x270": "rtmp://cp111111.live.edgefcs.net/live/lab-2-presenter-delivery.stream-960x270_1_200@111111"}}                ''',
-            'MANAGE_LIVE': True,
-            'FILE_SEARCH_RANGE': u'60',
-            'ADMIN_SERVER_URL': u'admin_server_fake_url.compute-1.amazonaws.com',
-            'ADMIN_SERVER_USER': u'admin_server_fake_user',
-            'ADMIN_SERVER_PASSWD': u'admin_server_fake_pass',
-            'UPDATE_FREQUENCY': u'120',
-            'CONNECTTIMEOUT': u'60',
-            'LOW_SPEED_TIME': u'300',
-            'MAX_INGEST': u'1',
-            'INGEST_DELAY': u'60',
-            'NUMBER_OF_RETRIES': u'5',
-            'BACKUP_AGENT': False,
-        }
-
-    def test_scrape_form_values_ok(self):
-        resp_html = resp_datafile('get_mhcfg', 'ok')
-        soup = BeautifulSoup(resp_html, 'html.parser')
-        r = WebUiConfig.scrape_form_values(
-                soup=soup,
-                tag_names = [
-                    'DEVICE_NAME',
-                    'DEVICE_ADDRESS',
-                    'DEVICE_USERNAME',
-                    'DEVICE_PASSWORD',
-                    'DEVICE_CHANNEL',
-                    'DEVICE_LIVE_CHANNELS',
-                    'DEVICE_LIVE_STREAMS',
-                    'MANAGE_LIVE',
-                    'FILE_SEARCH_RANGE',
-                    'ADMIN_SERVER_URL',
-                    'ADMIN_SERVER_USER',
-                    'ADMIN_SERVER_PASSWD',
-                    'UPDATE_FREQUENCY',
-                    'CONNECTTIMEOUT',
-                    'LOW_SPEED_TIME',
-                    'MAX_INGEST',
-                    'INGEST_DELAY',
-                    'NUMBER_OF_RETRIES',
-                    'BACKUP_AGENT',
-                ]
-        )
-        assert r == self.scraped_values
+        # TODO: how to use pytest fixtures with httpretty?
+        #   there's something in the scope, or order of defs that i'm not
+        #   getting right...
+        assert response == example_form_values()
 
 
+    @httpretty.activate
+    def test_set_configuration(self):
+        resp_data = resp_datafile('set_example_form', 'ok')
+        example_values = example_form_values()
+        httpretty.register_uri(
+                httpretty.POST,
+                '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
+                body=resp_data,
+                status=200)
+        response = WebUiConfig.webui_configuration(
+                client=self.c, path='/admin/sources/D12345678.hdmi-a',
+                form_name='form_example', params=example_values)
 
+        assert response == example_values
+
+
+    @httpretty.activate
+    def test_get_configuration_multiple_forms(self):
+        resp_data = resp_datafile('set_example', 'multiple_forms')
+        httpretty.register_uri(
+                httpretty.GET,
+                '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
+                body=resp_data,
+                status=200)
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiConfig.webui_configuration(
+                    client=self.c, path='/admin/sources/D12345678.hdmi-a',
+                    form_name='form_example')
+
+        assert 'zero or more than one form' in e.value.message
+
+
+    @httpretty.activate
+    def test_get_configuration_no_form(self):
+        resp_data = resp_datafile('set_example', 'no_form')
+        httpretty.register_uri(
+                httpretty.GET,
+                '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
+                body=resp_data,
+                status=200)
+        with pytest.raises(IndiscernibleResponseFromWebUiError) as e:
+            response = WebUiConfig.webui_configuration(
+                    client=self.c, path='/admin/sources/D12345678.hdmi-a',
+                    form_name='form_example')
+
+        assert 'zero or more than one form' in e.value.message
+
+
+    @httpretty.activate
+    def test_get_configuration_error_message(self):
+        resp_data = resp_datafile('set_example', 'error_message')
+        httpretty.register_uri(
+                httpretty.GET,
+                '{}/admin/sources/D12345678.hdmi-a'.format(epiphan_url),
+                body=resp_data,
+                status=200)
+        with pytest.raises(SettingConfigError) as e:
+            response = WebUiConfig.webui_configuration(
+                    client=self.c, path='/admin/sources/D12345678.hdmi-a',
+                    form_name='form_example')
+
+        assert 'fake error message' in e.value.message

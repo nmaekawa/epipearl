@@ -4,7 +4,8 @@
 from bs4 import BeautifulSoup
 import logging
 
-import epipearl.endpoints.webui_scrape
+import epipearl.endpoints.webui_scrape as webui_scrape
+from epipearl.errors import EpipearlError
 from epipearl.errors import IndiscernibleResponseFromWebUiError
 from epipearl.errors import SettingConfigError
 
@@ -247,7 +248,7 @@ class WebUiConfig(object):
         # still have to check errors in response html
         if r.status_code == 200:
             soup = BeautifulSoup(r.text, 'html.parser')
-            emsg = cls._scrape_error(soup)
+            emsg = webui_scrape.scrape_error(soup)
             if len(emsg) > 0:     # concat error messages
                 allmsgs = [x['msg'] for x in emsg if 'msg' in x]
                 msg += '\n'.join(allmsgs)
@@ -270,87 +271,56 @@ class WebUiConfig(object):
 
 
     @classmethod
-    def scrape_form_values(cls, soup, tag_names, include_blanks=False):
-        """scrape values from input forms specified in check_form_input.
+    def webui_configuration(cls, client, path, form_name, params=None):
+        """generic request to config form
+
+        client: epipearl client instance
+        path: for webui function, ex: admin/timesynccfg
+        form_name: attrib `name` of form-element to be scraped
+        params: dict with params for web ui form
+            if present, assume it's a post request
+            if None, assume it's a get
+
+        return a dictionary with form values,
+            form-element attribute 'name' is used as key.
         """
-        def form_tags_by_name(name):
-            def f(tag):
-                return tag.has_attr('name') and \
-                        tag['name'] == name and \
-                        (tag.name == 'input' or tag.name == 'textarea')
-            return f
+        method = 'GET'
+        if params is None:
+            response = client.get(
+                    path,
+                    extra_headers={
+                        'Content-Type': 'application/x-www-form-urlencoded'})
+        else:
+            method = 'POST'
+            response = client.post(
+                    path, data=params,
+                    extra_headers={
+                        'Content-Type': 'application/x-www-form-urlencoded'})
 
+        logger = logging.getLogger(__name__)
+        msg = 'error from {} call {}/{}: '.format(method, client.url, path)
 
-        result = {}
-        for n in tag_names:
-            tag_list = soup.find_all(form_tags_by_name(name=n))
-            for tag in tag_list:
-                if tag.name == 'input':
-                    if tag.has_attr('type'):
-                        if tag['type'] == 'text' or tag['type'] == 'password':
-                            if tag.has_attr('value'):
-                                result[n] = tag['value']
-                            else:
-                                if include_blanks:
-                                    result[n] = ''
-                        elif tag['type'] == 'checkbox':
-                            if tag.has_attr('checked'):
-                                result[n] = True
-                            else:
-                                result[n] = False
-                        else:
-                            # error - unable to deal with input type tag['type']
-                            logging.getLogger(__name__).error('error parsing value for form '
-                                    'id({}): unable to deal with input'
-                                    'type({})'.format(n, tag['type']))
-                else:  # it's <textarea>
-                    result[n] = tag.string
-            else:  # tag_id not found
-                if include_blanks:
-                    result[n] = ''
-        return result
+        doc = BeautifulSoup(response.text, 'html.parser')
 
+        # check if error messages in html response
+        error_msgs = webui_scrape.scrape_error(doc)
+        if len(error_msgs) > 0:  # concat error messages
+            allmsgs = [x['msg'] for x in error_msgs if 'msg' in x]
+            msg += '\n'.join(allmsgs)
+            logger.error(msg)
+            raise SettingConfigError(msg)
+        else:  # all is well, pluck values from html form
+            def find_form(tag):
+                return tag.name == 'form' and \
+                        tag.has_attr('name') and tag['name'] == form_name
 
-    @classmethod
-    def _scrape_error(cls, soup):
-        """webscrape for error msg in returned html."""
-        warn = soup('div', class_='wui-message-warning')
-        msgs = cls._scrape_msg(warn)
-        error = soup('div', class_='wui-message-error')
-        msgs += cls._scrape_msg(error, warning=False)
-        return msgs
+            forms = doc.find_all(find_form)
+            if len(forms) == 1:
+                de_facto = webui_scrape.pluck_form_values(forms[0])
+                return de_facto
+            else:
+                msg += 'zero or more than one form named ({}) returned!'.format(
+                        form_name)
+                logger.error(msg)
+                raise IndiscernibleResponseFromWebUiError(msg)
 
-
-    @classmethod
-    def _scrape_msg(cls, mtag, warning=True):
-        """navigate div to find msg text and error code."""
-        resp = []
-        if len(mtag) > 0:
-            dtag = mtag[0].findChildren(
-                    'div',
-                    class_='wui-message-banner-inner')
-            for d in dtag:
-                lines = d.strings
-                error_msg = None
-                error_code = None
-                try:
-                    error_msg = next(lines)
-                    error_code = next(lines)
-                except StopIteration:
-                    # msg or code or both not found!
-                    pass
-                except Exception as e:
-                    msg = 'could not scrape epiphan webui response: %s' \
-                            % e.message
-                    logging.getLogger(__name__).error(msg)
-                    resp.append({
-                        'cat': 'error',
-                        'msg': msg,
-                        'code': 'html_parsing_error'})
-                else:
-                    # msg and code ok
-                    resp.append({
-                        'cat': 'warning' if warning else 'error',
-                        'msg': error_msg if error_msg else 'unknown msg',
-                        'code': error_code if error_code else 'unknown code'})
-        return resp
